@@ -5,7 +5,8 @@ on:
     inputs:
       api_base_url:
         description: Public API URL backed by the same Supabase database
-        required: true
+        required: false
+        default: https://dwhvgxilxzmxatwejfmu.supabase.co/functions/v1/mobile-api
         type: string
       release_tag:
         description: Release tag to publish
