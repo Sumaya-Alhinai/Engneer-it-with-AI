@@ -1,0 +1,2406 @@
+{
+  "name": "Aman AI - Master Workflow (كل الوكلاء الثمانية)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "report-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2400,
+        -400
+      ],
+      "id": "efa918e7-2e02-4e3d-adbd-e6189af5ae40",
+      "name": "Webhook",
+      "webhookId": "2ea85d10-ca57-4a6d-87a0-bc12f3602a42"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a073c542-9e87-4e8e-bca5-ea9fd942c1ab",
+              "name": "user_id",
+              "value": "={{$json.body.user_id}}",
+              "type": "string"
+            },
+            {
+              "id": "118cc5df-1876-4ca3-a16d-1e613eb06601",
+              "name": "type",
+              "value": "={{$json.body.type}}",
+              "type": "string"
+            },
+            {
+              "id": "66c7d15b-ddbb-455a-8ded-f01f916e8098",
+              "name": "description",
+              "value": "={{$json.body.description}}",
+              "type": "string"
+            },
+            {
+              "id": "da3044ba-6a1b-41b3-95ed-d872aa2d95cd",
+              "name": "latitude",
+              "value": "={{$json.body.latitude}}",
+              "type": "string"
+            },
+            {
+              "id": "88d4cc30-7db8-4297-b62f-92158d8b1772",
+              "name": "longitude",
+              "value": "={{$json.body.longitude}}",
+              "type": "string"
+            },
+            {
+              "id": "c28905e6-7759-4aa3-bc72-028aaccc71c1",
+              "name": "image_url",
+              "value": "={{$json.body.image_url}}",
+              "type": "string"
+            },
+            {
+              "id": "43f302c1-3e86-4c6a-8f71-3c593013f696",
+              "name": "status",
+              "value": "new",
+              "type": "string"
+            },
+            {
+              "id": "92b24e46-0a5a-4a5c-9f1e-31054e8e5523",
+              "name": "created_at",
+              "value": "={{$now}}",
+              "type": "string"
+            },
+            {
+              "id": "3b94b850-399b-4f26-a41a-e6c72bd6ba46",
+              "name": "report",
+              "value": "={{$json.body.description}}",
+              "type": "string"
+            },
+            {
+              "id": "gen-report-id-0001",
+              "name": "report_id",
+              "value": "={{ $json.body.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f1a2b3c4-d5e6-4789-a0b1-c2d3e4f5a6b7",
+              "name": "has_camera_exif",
+              "value": "={{ $json.body.has_camera_exif }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2160,
+        -400
+      ],
+      "id": "40494ade-ac94-4bcc-b40a-536ff08a1a8a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.report }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "أنت وكيل الاستقبال الأولي في منصة Aman AI.\n\nمهمتك تحليل نص البلاغ فقط وإرجاع تصنيف أولي سريع.\n\nحدد:\n- selected_incident_type: واحد من traffic_accident, fire, medical, flood, road_block, other\n- confidence: رقم من 0 إلى 1\n- summary: ملخص قصير للبلاغ بجملة واحدة\n- location_text: أي إشارة لموقع مذكورة داخل نص البلاغ نفسه (فارغة إذا غير مذكورة)\n\nأرجع النتيجة فقط حسب Output Parser، بدون أي شرح إضافي."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1920,
+        -400
+      ],
+      "id": "9fa264e7-e9f0-4786-85fb-6249c3e40720",
+      "name": "AI Agent 1 - تصنيف أولي"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1920,
+        -150
+      ],
+      "id": "cef44740-d61b-4ee1-ac1d-7439f03a2018",
+      "name": "OpenAI Chat Model 1",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"selected_incident_type\": \"traffic_accident\",\n  \"confidence\": 0.9,\n  \"summary\": \"حادث مروري مع إصابة\",\n  \"location_text\": \"دوار الخوض\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1760,
+        -150
+      ],
+      "id": "dcb7df70-d53c-4a11-bf3c-cb1db0fb11af",
+      "name": "Structured Output Parser 1"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "HyKaZZ2ieEqvE6Hs",
+          "mode": "list",
+          "cachedResultName": "Reports",
+          "cachedResultUrl": "/projects/pjE4QdbwEMSpOGwK/datatables/HyKaZZ2ieEqvE6Hs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ambulance": false,
+            "police": false,
+            "civil_defense": false,
+            "report_id": "={{ $('Edit Fields').item.json.report_id }}",
+            "user_id": "={{ $('Edit Fields').item.json.user_id }}",
+            "report": "={{ $('Edit Fields').item.json.report }}",
+            "incident_type": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.selected_incident_type }}",
+            "priority": "Pending",
+            "summary": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.summary }}",
+            "location": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.location_text }}",
+            "created_at": "={{ $('Edit Fields').item.json.created_at }}",
+            "status": "Received"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "incident_type",
+              "displayName": "incident_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ambulance",
+              "displayName": "ambulance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "police",
+              "displayName": "police",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "civil_defense",
+              "displayName": "civil_defense",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -1600,
+        -400
+      ],
+      "id": "c5a60265-d283-46d8-9876-3e682afdb7a3",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c4daa2df-76c1-4389-aa3f-78ff05217f28",
+              "leftValue": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.selected_incident_type }}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1440,
+        -400
+      ],
+      "id": "34965074-b319-4fe4-8bed-2326566df043",
+      "name": "If - تحقق التصنيف الأولي"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"message\": \"البيانات غير مكتملة، يرجى إدخال جميع الحقول المطلوبة.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1280,
+        -200
+      ],
+      "id": "f320c550-d1be-4273-82ba-a564d1fe6752",
+      "name": "Respond to Webhook - خطأ"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"تم استلام البلاغ بنجاح\",\n  \"next_agent\": \"Classification Agent\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2560,
+        -400
+      ],
+      "id": "a00d99e5-510f-47c7-a12d-5caa3adddae3",
+      "name": "Respond to Webhook - نجاح"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent2",
+      "id": "9c5cd403-ab36-4f16-86d8-51d177f02f62",
+      "position": [
+        -1280,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "242e2b61-b39a-460a-bba3-c64af5d469a5",
+              "name": "report",
+              "value": "={{ $('Edit Fields').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "815cbbff-365d-46a7-9822-beea86de0c2a",
+              "name": "user_id",
+              "value": "={{ $('Edit Fields').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "31aa5cce-9e00-48ee-8df1-348ee32971fd",
+              "name": "report_id",
+              "value": "={{ $('Edit Fields').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f7b57ef2-33bd-4d02-88e8-5ebc73d7b68b",
+              "name": "latitude",
+              "value": "={{ $('Edit Fields').item.json.latitude }}",
+              "type": "string"
+            },
+            {
+              "id": "9e205345-0a41-4443-b76b-1b2389552741",
+              "name": "longitude",
+              "value": "={{ $('Edit Fields').item.json.longitude }}",
+              "type": "string"
+            },
+            {
+              "id": "ea6b5247-aede-4bcd-a725-a8501428c16c",
+              "name": "location_text",
+              "value": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.location_text }}",
+              "type": "string"
+            },
+            {
+              "id": "7d17184c-1900-4669-a7a4-3582eb162414",
+              "name": "selected_incident_type",
+              "value": "={{ $('AI Agent 1 - تصنيف أولي').item.json.output.selected_incident_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=البلاغ:\n{{$json.report}}\n\nالتصنيف الأولي الذي حدده النظام: {{$json.selected_incident_type}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "أنت Agent 2 في نظام Aman AI.\n\nمهمتك التحقق من أن التصنيف الأولي لنوع البلاغ يطابق فعلاً وصف البلاغ.\n\nالقيم المسموح بها لنوع البلاغ:\ntraffic_accident\nfire\nmedical\nflood\nroad_block\nother\n\nالتعليمات:\n- إذا كان التصنيف الأولي صحيحًا، أعد نفس النوع في confirmed_incident_type واجعل type_match = true.\n- إذا كان غير صحيح، صحّح النوع حسب الوصف الفعلي واجعل type_match = false.\n- أعط درجة ثقة (confidence) من 0 إلى 1.\n- اكتب سببًا مختصرًا وواضحًا في reason.\n- أخرج النتيجة فقط حسب Structured Output Parser."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1040,
+        -400
+      ],
+      "id": "bc4f33fe-a356-4e41-9af2-f1b95b184ef8",
+      "name": "AI Agent 2 - تصنيف البلاغ"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1040,
+        -150
+      ],
+      "id": "d97efd5d-728c-463f-afd7-02d9a944039a",
+      "name": "OpenAI Chat Model 2",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"confirmed_incident_type\": \"traffic_accident\",\n  \"type_match\": true,\n  \"confidence\": 0.98,\n  \"reason\": \"وصف البلاغ يتوافق مع التصنيف الأولي.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        -150
+      ],
+      "id": "68f9be0f-8df8-4a9b-aa6b-4a94bd3ff76d",
+      "name": "Structured Output Parser 2"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent3",
+      "id": "32acf48f-283c-464a-a80f-031be5bc272c",
+      "position": [
+        -720,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e497ea4d-4ad8-484a-9cdc-9d64bb78bfdd",
+              "name": "report",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "dad74d96-4ebf-4fff-b03a-70936c029fc6",
+              "name": "user_id",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d3dca40a-be51-4e54-818b-a7606c6e18bf",
+              "name": "report_id",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "72dad449-678d-481c-9993-025d3eaa90a0",
+              "name": "latitude",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.latitude }}",
+              "type": "string"
+            },
+            {
+              "id": "7b10a610-9fc8-495a-a370-8c98329346c4",
+              "name": "longitude",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.longitude }}",
+              "type": "string"
+            },
+            {
+              "id": "c5795a3a-7f1e-49c1-bb02-b5c552123e65",
+              "name": "location_text",
+              "value": "={{ $('Prep - بيانات Agent2').item.json.location_text }}",
+              "type": "string"
+            },
+            {
+              "id": "75b4c186-8fdd-429f-af0d-04c7d3959f91",
+              "name": "confirmed_incident_type",
+              "value": "={{ $('AI Agent 2 - تصنيف البلاغ').item.json.output.confirmed_incident_type }}",
+              "type": "string"
+            },
+            {
+              "id": "4433c859-86a1-44f9-916c-2c693516f0a3",
+              "name": "type_match",
+              "value": "={{ $('AI Agent 2 - تصنيف البلاغ').item.json.output.type_match }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=قيّم مستوى خطورة البلاغ التالي:\n\nنوع البلاغ المؤكد: {{$json.confirmed_incident_type}}\nهل يطابق تصنيف المستخدم الوصف الفعلي (type_match): {{$json.type_match}}\n\nالوصف:\n{{$json.report}}\n\nقيّم مستوى الخطورة فقط.\n\nأرجع النتيجة بصيغة JSON فقط حسب الـ Output Parser.\nلا تضف أي شرح أو أي نص خارج JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Risk Assessment Agent in Aman AI.\n\nYour job is ONLY to assess the severity of the incident.\n\nInputs:\n- report\n- confirmed_incident_type\n- type_match\n\nRules:\n\n1. If type_match is false:\n- Set priority to \"low\"\n- risk_score = 5\n- Explain that the report needs manual review.\n\n2. Otherwise analyze:\n- number of injured people\n- fire size\n- trapped people\n- danger to life\n- danger to public\n- urgency\n\nPriority Levels:\n\ncritical\n- Immediate danger to life\n- Multiple injuries\n- Large fire\n- Building collapse\n- Drowning\n- Explosion\n\nhigh\n- Serious injuries\n- Vehicle trapped\n- Large accident\n- Fire spreading\n\nmedium\n- Minor injuries\n- Small fire\n- Needs response but not life threatening\n\nlow\n- No injuries\n- Small issue\n- Informational report\n\nReturn ONLY JSON.\n\nrisk_score MUST be an integer from 0 to 100 representing overall risk percentage (0 = no risk at all, 100 = maximum/critical life-threatening risk). NEVER return a decimal fraction like 0.8, and NEVER a 1-10 scale — always 0-100.\nSuggested bands matching the priority levels above: critical=90-100, high=65-89, medium=35-64, low=0-34."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -480,
+        -400
+      ],
+      "id": "620de74f-9bfc-41c3-91b0-ca56de845957",
+      "name": "AI Agent 3 - تحديد الخطورة"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        -150
+      ],
+      "id": "c462af5b-1858-425d-a34b-436fce7daa1f",
+      "name": "OpenAI Chat Model 3",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"priority\": \"low\", \"risk_score\": 15, \"risk_reason\": \"سبب تقييم مستوى الخطورة\"}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        -150
+      ],
+      "id": "d8051c48-941d-4009-bcb6-6d586aa71182",
+      "name": "Structured Output Parser 3"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent4",
+      "id": "fd83e388-ebbf-4330-b379-8f2135faa434",
+      "position": [
+        -160,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "139ffdb8-0be6-475c-bd9d-e6e12aae7c20",
+              "name": "report",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "cc8af0f0-03a3-4bc4-b52e-241ffaf7a6fa",
+              "name": "user_id",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6406f857-8bf1-4dd3-bdc2-b54a5ce8195b",
+              "name": "report_id",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "07cab2e7-1ba1-4f87-8786-2d377749e3b3",
+              "name": "latitude",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.latitude }}",
+              "type": "string"
+            },
+            {
+              "id": "17b031fc-335a-42d5-b2a4-3bb4c1c7e3e0",
+              "name": "longitude",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.longitude }}",
+              "type": "string"
+            },
+            {
+              "id": "4f7937f6-54fc-4d8b-9558-362bc19ea814",
+              "name": "location_text",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.location_text }}",
+              "type": "string"
+            },
+            {
+              "id": "00f25ec8-94f5-4693-a78b-440ceaeb25b9",
+              "name": "confirmed_incident_type",
+              "value": "={{ $('Prep - بيانات Agent3').item.json.confirmed_incident_type }}",
+              "type": "string"
+            },
+            {
+              "id": "ff978041-02b1-4c35-b655-45755d4eb55c",
+              "name": "priority",
+              "value": "={{ $('AI Agent 3 - تحديد الخطورة').item.json.output.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "44e9dc90-2413-4944-bd5f-7018b679e026",
+              "name": "risk_score",
+              "value": "={{ $('AI Agent 3 - تحديد الخطورة').item.json.output.risk_score }}",
+              "type": "string"
+            },
+            {
+              "id": "55949493-94c3-445f-866d-4f0f78d869c3",
+              "name": "risk_reason",
+              "value": "={{ $('AI Agent 3 - تحديد الخطورة').item.json.output.risk_reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=أنت وكيل متخصص في تحليل موقع البلاغات الطارئة.\n\nبيانات البلاغ:\n- نص البلاغ: {{$json.report}}\n- معرّف المستخدم: {{$json.user_id}}\n- معرّف البلاغ: {{$json.report_id}}\n- خط العرض: {{$json.latitude}}\n- خط الطول: {{$json.longitude}}\n- وصف الموقع: {{$json.location_text}}\n\nحلّل الموقع وحدد:\n1. هل بيانات الموقع صالحة أم غير مكتملة.\n2. الولاية أو المدينة إن أمكن.\n3. المنطقة أو الحي إن أمكن.\n4. هل الوصول للموقع سهل أم صعب أم غير معروف.\n5. هل موقع البلاغ قد يزيد مستوى الخطورة.\n6. ملاحظة مختصرة عن الموقع.\n\nأرجع النتيجة فقط بصيغة JSON حسب الـ Structured Output Parser، ولا تضف أي نص خارج JSON.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        80,
+        -400
+      ],
+      "id": "46ef0fad-c00a-4cf2-927f-2cdd55c1f657",
+      "name": "AI Agent 4 - تحليل الموقع"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        -150
+      ],
+      "id": "a166b99a-ac60-4d01-8b1a-d3c55c106f8d",
+      "name": "OpenAI Chat Model 4",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"location_status\": \"valid\",\n  \"wilayat\": \"Muscat\",\n  \"area\": \"Al Khuwair\",\n  \"accessibility\": \"easy\",\n  \"location_risk\": \"low\",\n  \"location_note\": \"الموقع واضح ويمكن الوصول إليه بسهولة\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -150
+      ],
+      "id": "973dfdab-dd46-42f2-a37e-938ee115826c",
+      "name": "Structured Output Parser 4"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent5",
+      "id": "8d42d1d9-5108-4a42-84a5-dc7e10bf061b",
+      "position": [
+        440,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8715d349-997c-415d-a5a5-a2da07ba6ffd",
+              "name": "report",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "9b6e2613-f0d7-42b5-a09f-a64a759a0962",
+              "name": "user_id",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "edda44a6-9b51-4d4d-acb2-e6431aa8971e",
+              "name": "report_id",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "aed26e95-21c9-475c-96d2-93c2d96241e2",
+              "name": "latitude",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.latitude }}",
+              "type": "string"
+            },
+            {
+              "id": "26c95e34-bd34-4a90-aa70-942ed3c6bed3",
+              "name": "longitude",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.longitude }}",
+              "type": "string"
+            },
+            {
+              "id": "969eeba5-d69a-4599-8466-316f2db48853",
+              "name": "location_text",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.location_text }}",
+              "type": "string"
+            },
+            {
+              "id": "1bb763a2-091b-4a83-a33c-601ef20aea74",
+              "name": "confirmed_incident_type",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.confirmed_incident_type }}",
+              "type": "string"
+            },
+            {
+              "id": "6ce47ece-9aca-4df9-9797-d14e203612bd",
+              "name": "priority",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "8bae40c3-82ba-40c3-b0e4-06e9503df7a4",
+              "name": "risk_score",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.risk_score }}",
+              "type": "string"
+            },
+            {
+              "id": "1bc69e7d-feaf-4f54-81cc-149ef61c76c3",
+              "name": "risk_reason",
+              "value": "={{ $('Prep - بيانات Agent4').item.json.risk_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "9f77cfdb-b19e-4be9-9699-1216f307339d",
+              "name": "location_status",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.location_status }}",
+              "type": "string"
+            },
+            {
+              "id": "8961d6b0-17f5-4203-a866-d367814b34ef",
+              "name": "wilayat",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.wilayat }}",
+              "type": "string"
+            },
+            {
+              "id": "9b7620c5-d8fc-48dc-bbf1-ddcca56ed8d0",
+              "name": "area",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.area }}",
+              "type": "string"
+            },
+            {
+              "id": "f65e8964-890c-4d02-b385-515abd28436a",
+              "name": "accessibility",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.accessibility }}",
+              "type": "string"
+            },
+            {
+              "id": "82a3143b-a29e-49b5-bdbb-3feb2dc92cdb",
+              "name": "location_risk",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.location_risk }}",
+              "type": "string"
+            },
+            {
+              "id": "b936a848-73ee-45d4-a2ab-7d40ff62d32d",
+              "name": "location_note",
+              "value": "={{ $('AI Agent 4 - تحليل الموقع').item.json.output.location_note }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Verify this emergency report.\n\nReport Data:\n\n{{ JSON.stringify($json) }}\n\nReturn only the structured JSON output.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Verification Agent for Aman AI.\n\nYour task is to verify emergency reports before they are dispatched.\n\nAnalyze:\n- Incident type\n- Priority\n- Location\n- Wilayat\n- Summary\n\nDetermine:\n1. Whether the report is credible.\n2. Whether enough information exists.\n3. Whether the location is usable.\n4. Whether the report should be trusted.\n\nAlways return only the structured output.\nNever add explanations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        700,
+        -400
+      ],
+      "id": "3f1a91b8-3423-46cd-8061-e2c8a0866af9",
+      "name": "AI Agent 5 - التحقق من البلاغ"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        700,
+        -150
+      ],
+      "id": "77bacf40-8735-4cb4-bf2f-73a52b8c5e16",
+      "name": "OpenAI Chat Model 5",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"verified\": true,\n  \"confidence\": 0.95,\n  \"verification_status\": \"verified\",\n  \"reason\": \"The report contains sufficient information and appears credible.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        -150
+      ],
+      "id": "2e5b1927-362d-4f06-8d44-02d8a4e4afba",
+      "name": "Structured Output Parser 5"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent6",
+      "id": "bb1e94fc-e7f4-4529-a944-dddb6372490c",
+      "position": [
+        1080,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "15a82da8-39b2-43dc-bbcf-71073cad0016",
+              "name": "report",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "ba0677df-bb1b-4088-acff-195dc8760ee8",
+              "name": "user_id",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6cb58523-e6b0-4068-ac4f-8d784ac5e033",
+              "name": "report_id",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "8b31a9cd-d149-43d8-984f-1ad961f8ede2",
+              "name": "latitude",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.latitude }}",
+              "type": "string"
+            },
+            {
+              "id": "59bbc5ec-e3b3-4c53-81d0-3310d2b709cc",
+              "name": "longitude",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.longitude }}",
+              "type": "string"
+            },
+            {
+              "id": "a564e529-4852-4a6d-8e59-1a16846a3cc9",
+              "name": "location_text",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.location_text }}",
+              "type": "string"
+            },
+            {
+              "id": "a2b64922-575d-4203-9e86-91a67e2fc07f",
+              "name": "confirmed_incident_type",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.confirmed_incident_type }}",
+              "type": "string"
+            },
+            {
+              "id": "f8e700cc-a2c4-4217-9b6b-416504ee2dcd",
+              "name": "priority",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "32f8740f-59cb-4595-bfde-2e69679cb679",
+              "name": "risk_score",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.risk_score }}",
+              "type": "string"
+            },
+            {
+              "id": "2f4b4061-8526-4322-b978-5ad51f98d241",
+              "name": "risk_reason",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.risk_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "f6a9d752-db50-4a7d-9271-4015d9de6e99",
+              "name": "location_status",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.location_status }}",
+              "type": "string"
+            },
+            {
+              "id": "a06eeb03-a869-46b0-9acd-2a06105956be",
+              "name": "wilayat",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.wilayat }}",
+              "type": "string"
+            },
+            {
+              "id": "d722a635-ca39-4dff-988e-8e2a05a2e2ed",
+              "name": "area",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.area }}",
+              "type": "string"
+            },
+            {
+              "id": "bb8e438f-b23b-4979-8ee9-87b968201a0e",
+              "name": "accessibility",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.accessibility }}",
+              "type": "string"
+            },
+            {
+              "id": "7e7ef4f9-2596-41d3-905b-86948d4bed2e",
+              "name": "location_risk",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.location_risk }}",
+              "type": "string"
+            },
+            {
+              "id": "a48cd40a-3e98-4905-b1f0-3884b05658f0",
+              "name": "location_note",
+              "value": "={{ $('Prep - بيانات Agent5').item.json.location_note }}",
+              "type": "string"
+            },
+            {
+              "id": "57ae8031-809e-49ec-b013-d97035181a34",
+              "name": "verified",
+              "value": "={{ $('AI Agent 5 - التحقق من البلاغ').item.json.output.verified }}",
+              "type": "string"
+            },
+            {
+              "id": "bb73eb69-ec7b-443b-a391-f82957638e05",
+              "name": "confidence",
+              "value": "={{ $('AI Agent 5 - التحقق من البلاغ').item.json.output.confidence }}",
+              "type": "string"
+            },
+            {
+              "id": "c4141ab2-9baa-493b-8c83-ec00f13a0874",
+              "name": "verification_status",
+              "value": "={{ $('AI Agent 5 - التحقق من البلاغ').item.json.output.verification_status }}",
+              "type": "string"
+            },
+            {
+              "id": "de138a05-0ca2-4484-8d2d-d517e858868e",
+              "name": "verification_reason",
+              "value": "={{ $('AI Agent 5 - التحقق من البلاغ').item.json.output.reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=حلل بيانات البلاغ التالية واتخذ القرار المناسب:\n\n{{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Final Decision Engine for Aman AI, an AI-powered emergency and incident management system.\n\nAnalyze all data received from previous agents (incident type, priority, risk score, location analysis, verification status and confidence) and make the final operational decision.\n\nReturn ONLY these fields as JSON:\n\n- final_decision: one of dispatch, monitor, request_more_information, reject\n- department: one of Police, Ambulance, Civil Defense, Multiple Agencies, None\n- urgency: one of critical, high, medium, low\n- reason: short explanation for the decision\n- notify_citizen: true if the reporter should receive a notification, false otherwise\n\nDecision Rules:\n- Dispatch immediately if the incident is verified and has High or Critical priority.\n- If confidence is low or verification failed, request more information.\n- Reject reports that are clearly invalid, duplicate, or false.\n- Choose the department based on the incident type (traffic_accident -> Police, fire -> Civil Defense, medical -> Ambulance, flood -> Civil Defense, road_block -> Police).\n- If multiple agencies are required, return \"Multiple Agencies\".\n- Keep the reason concise.\n\nReturn ONLY valid JSON, no explanations outside the JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1320,
+        -400
+      ],
+      "id": "59a6d1b6-5318-46b1-862d-de753a6af604",
+      "name": "AI Agent 6 - القرار النهائي"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        -150
+      ],
+      "id": "3b54526d-f76d-490a-bb30-bd7005588e93",
+      "name": "OpenAI Chat Model 6",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"final_decision\": \"dispatch\",\n  \"department\": \"Police\",\n  \"urgency\": \"critical\",\n  \"reason\": \"حادث مروري موثوق مع إصابات ويحتاج استجابة فورية.\",\n  \"notify_citizen\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1480,
+        -150
+      ],
+      "id": "5c323034-de08-4462-8bf6-dde7d410ae6a",
+      "name": "Structured Output Parser 6"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent7",
+      "id": "4a83a41a-1000-4557-81e1-4a4384cd6580",
+      "position": [
+        1720,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a563720c-171b-4dd9-8b31-53987eceda96",
+              "name": "report",
+              "value": "={{ $('Prep - بيانات Agent6').item.json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "70270f83-7ae2-46cd-af42-fd4f022ad861",
+              "name": "user_id",
+              "value": "={{ $('Prep - بيانات Agent6').item.json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ac21e3a0-f81a-497b-97d2-2f859cc11aa6",
+              "name": "report_id",
+              "value": "={{ $('Prep - بيانات Agent6').item.json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "fb7fd276-8d22-4921-8967-e4bf2f66742b",
+              "name": "incident_type",
+              "value": "={{ $('Prep - بيانات Agent6').item.json.confirmed_incident_type }}",
+              "type": "string"
+            },
+            {
+              "id": "a6c1b9a5-542c-4a2e-982d-c151e9c77cf2",
+              "name": "location",
+              "value": "={{ $('Prep - بيانات Agent6').item.json.wilayat + ' - ' + $('Prep - بيانات Agent6').item.json.area }}",
+              "type": "string"
+            },
+            {
+              "id": "dde4f39a-4395-437c-b770-162f41e4e833",
+              "name": "department",
+              "value": "={{ $('AI Agent 6 - القرار النهائي').item.json.output.department }}",
+              "type": "string"
+            },
+            {
+              "id": "b0dd95c3-b4ce-4269-8827-196b28ffe439",
+              "name": "urgency",
+              "value": "={{ $('AI Agent 6 - القرار النهائي').item.json.output.urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "e8d27035-8e1c-486f-8cf2-d5a245cf07e8",
+              "name": "reason",
+              "value": "={{ $('AI Agent 6 - القرار النهائي').item.json.output.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "bac3e474-4823-48da-9d3b-7cfd7aa4d61a",
+              "name": "notify",
+              "value": "={{ $('AI Agent 6 - القرار النهائي').item.json.output.notify_citizen }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f3fefc48-ae4e-4456-aefb-7f07e2d2f557",
+              "leftValue": "={{$json.notify}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1960,
+        -400
+      ],
+      "id": "fd72ebcb-6f94-4ad2-9126-a68bb3dede07",
+      "name": "If - هل يتم الإشعار"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "82f04732-97c9-45f0-a944-0605e00ef1c4",
+              "name": "=agency_message",
+              "value": "=={{ '🚨 بلاغ جديد\\n\\nرقم البلاغ: ' + $json.report_id + '\\nنوع البلاغ: ' + $json.incident_type + '\\nالجهة المختصة: ' + $json.department + '\\nالأولوية: ' + $json.urgency + '\\nالسبب: ' + $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "73e07289-228c-468f-b492-32cff6c1984d",
+              "name": "=citizen_message",
+              "value": "=={{ '✅ تم استلام بلاغك بنجاح\\n\\nرقم البلاغ: ' + $json.report_id + '\\nتم تحويل البلاغ إلى: ' + $json.department + '\\n\\nشكراً لتعاونك.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2200,
+        -600
+      ],
+      "id": "7ac42dcc-4a7a-447b-a090-fa18a6562fe9",
+      "name": "إعداد رسائل الإشعار"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Police",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4c80cb9c-4ad0-4eba-afa8-f6b93819a90f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2a5e2afb-5649-4b3d-83e2-1827aed0c2f1",
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Ambulance",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0c1c9c85-2d6f-4c69-ae3f-4f62960bfa67",
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Civil Defense",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "multi-agencies-rule",
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Multiple Agencies",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        -600
+      ],
+      "id": "dc22b12e-bf97-4017-a370-34d2df2bda6e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cad26cf-b1f1-4d93-b20d-e7857b6cd946",
+              "name": "agency",
+              "value": "Police",
+              "type": "string"
+            },
+            {
+              "id": "6dbad22f-4b2c-4d85-bd5e-b38a68f37323",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "dc878af6-3a02-46f0-b7ac-02255431a236",
+              "name": "dispatch_status",
+              "value": "Sent to Police",
+              "type": "string"
+            },
+            {
+              "id": "a6a6f7e1-b096-4fd2-8465-87082150174d",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى شرطة عُمان السلطانية، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2680,
+        -900
+      ],
+      "id": "9a6dc39c-1566-444a-8248-f05982df6cbf",
+      "name": "Police"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b182904-4033-4c17-9ee7-7e13885f8b39",
+              "name": "agency",
+              "value": "Ambulance",
+              "type": "string"
+            },
+            {
+              "id": "a9a3bc05-9e92-421e-9eaa-259899a69ea0",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "93c075b5-134d-4564-b6eb-5e2b8b1c10ad",
+              "name": "dispatch_status",
+              "value": "Sent to Ambulance",
+              "type": "string"
+            },
+            {
+              "id": "ed8f200b-a7e7-4a00-a19b-893b9d7b2bc0",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى هيئة الإسعاف، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2680,
+        -650
+      ],
+      "id": "9b805014-6597-46d2-a35b-d989919f3b38",
+      "name": "Ambulance"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23c49ff6-e6be-4c95-b504-2420d6255287",
+              "name": "agency",
+              "value": "Civil Defense",
+              "type": "string"
+            },
+            {
+              "id": "0bd51747-edbe-468d-9af2-a9904e105fb1",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "495fc975-aac8-4830-b6a4-aec10302281c",
+              "name": "dispatch_status",
+              "value": "Sent to Civil Defense",
+              "type": "string"
+            },
+            {
+              "id": "a99f784b-a618-473f-ac83-8d2cbca464a4",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى الدفاع المدني والإسعاف، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2680,
+        -400
+      ],
+      "id": "e50f5237-f821-483f-a76b-39bdd18d4070",
+      "name": "Civil Defense"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "multi-1",
+              "name": "agency",
+              "value": "Multiple Agencies",
+              "type": "string"
+            },
+            {
+              "id": "multi-2",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "multi-3",
+              "name": "dispatch_status",
+              "value": "Sent to Multiple Agencies",
+              "type": "string"
+            },
+            {
+              "id": "multi-4",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله لعدة جهات مختصة، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2680,
+        -150
+      ],
+      "id": "459a3382-8832-4d42-8b0b-eb9798000a48",
+      "name": "Multiple Agencies"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb-1",
+              "name": "agency",
+              "value": "Unassigned",
+              "type": "string"
+            },
+            {
+              "id": "fb-2",
+              "name": "notification_status",
+              "value": "Needs Manual Review",
+              "type": "string"
+            },
+            {
+              "id": "fb-3",
+              "name": "dispatch_status",
+              "value": "Manual Review Required",
+              "type": "string"
+            },
+            {
+              "id": "fb-4",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وهو قيد المراجعة اليدوية حالياً.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2680,
+        100
+      ],
+      "id": "59894370-2d85-4d54-8ce3-5b46863fea60",
+      "name": "Manual Review"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+      "id": "fce47fe6-f2b3-4beb-93bd-ef899ee58819",
+      "position": [
+        2960,
+        -400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "16445aec-a3c4-4883-8878-b043502c0e7e",
+              "name": "final_status",
+              "value": "Ready to Dispatch",
+              "type": "string"
+            },
+            {
+              "id": "ff538b5c-bd8b-46f7-a185-13c179fca102",
+              "name": "dispatch_payload",
+              "value": "={{ $json.agency_message || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a451b6ae-9518-4941-9425-4f705cb35f7a",
+              "name": "citizen_payload",
+              "value": "={{ $json.citizen_message || 'تم استلام بلاغكم، لا حاجة لإشعار فوري.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1e5061d3-3641-4c7d-a8b8-f26e2022805b",
+              "leftValue": "={{ $json.image_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1968,
+        -200
+      ],
+      "id": "44247a6a-0584-4b91-b06d-3181c5f72eee",
+      "name": "If - يوجد صورة مرفقة؟"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "Prep - بيانات Agent8",
+      "id": "c1c9f311-8b60-4dbb-90ff-7b5b9344a51d",
+      "position": [
+        -1968,
+        -320
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f63388e-e1e6-447e-a232-f0f87aab27f9",
+              "name": "report",
+              "value": "={{ $json.report }}",
+              "type": "string"
+            },
+            {
+              "id": "1e05a7df-b72b-4235-b2a6-4f515548a37a",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "db7758a8-88f0-4b3f-9084-2d1b35b3c5e0",
+              "name": "report_id",
+              "value": "={{ $json.report_id }}",
+              "type": "string"
+            },
+            {
+              "id": "3d8fa216-3508-431e-9bbe-3e384a1fc733",
+              "name": "selected_incident_type",
+              "value": "={{ $json.type }}",
+              "type": "string"
+            },
+            {
+              "id": "197ebf01-b3cd-4044-ac45-7b1278469b8d",
+              "name": "image_urls",
+              "value": "={{ $json.image_url }}",
+              "type": "string"
+            },
+            {
+              "id": "e1f2a3b4-c5d6-47e8-9f01-a2b3c4d5e6f7",
+              "name": "has_camera_exif",
+              "value": "={{ $json.has_camera_exif }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Agent8(تحليل الصورة) — اختر الوركفلو هنا بعد الاستيراد"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "report": "={{ $json.report }}",
+            "user_id": "={{ $json.user_id }}",
+            "report_id": "={{ $json.report_id }}",
+            "selected_incident_type": "={{ $json.selected_incident_type }}",
+            "image_urls": "={{ $json.image_urls }}",
+            "has_camera_exif": "={{ $json.has_camera_exif }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "selected_incident_type",
+              "displayName": "selected_incident_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "image_urls",
+              "displayName": "image_urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "has_camera_exif",
+              "displayName": "has_camera_exif",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -1968,
+        -440
+      ],
+      "id": "6f6ffdf9-51b4-4886-bb12-81635ff9cc12",
+      "name": "Call Agent8(تحليل الصورة)"
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "name": "دمج نتيجة تحليل الصورة",
+      "id": "916e09af-97cc-4e02-bf1e-87902b6aa23f",
+      "position": [
+        -1968,
+        -560
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9f15a556-339d-4858-a615-a79e335b574e",
+              "name": "report",
+              "value": "={{ $('Edit Fields').item.json.report }} + \"\\n\\n[تحليل الصورة المرفقة تلقائيًا] النوع الظاهر بالصورة: \" + $json.output.image_detected_incident_type + \"، الثقة: \" + $json.output.image_confidence + \"، مؤشرات: \" + $json.output.severity_indicators + \"، الصورة تبدو حقيقية: \" + $json.output.is_photo_plausible + \" (\" + $json.output.authenticity_reason + \")\" + \"، تطابق النوع المُبلَّغ: \" + $json.output.photo_matches_reported_type }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0001",
+              "name": "image_is_plausible",
+              "value": "={{ $json.output.is_photo_plausible }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0002",
+              "name": "image_authenticity_reason",
+              "value": "={{ $json.output.authenticity_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0003",
+              "name": "image_ai_generated_suspected",
+              "value": "={{ $json.output.ai_generated_suspected }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b2c3d4-0004",
+              "name": "image_ai_generated_reason",
+              "value": "={{ $json.output.ai_generated_reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.AMAN_BACKEND_URL }}/api/reports/{{ $json.report_id }}/classification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "={{ $env.N8N_CALLBACK_SECRET }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  confirmed_incident_type: $json.confirmed_incident_type || $json.incident_type,\n  department: $json.department,\n  priority: $json.urgency,\n  risk_score: $json.risk_score,\n  verification_status: $json.verification_status,\n  location_status: $json.location_status,\n  ai_reason: $json.reason,\n  image_is_plausible: $json.image_is_plausible,\n  image_authenticity_reason: $json.image_authenticity_reason,\n  image_ai_generated_suspected: $json.image_ai_generated_suspected,\n  image_ai_generated_reason: $json.image_ai_generated_reason,\n  status: 'dispatched'  // يطابق Labels.statusOrder بالتطبيق/الداشبورد\n}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e",
+      "name": "HTTP Request - حفظ نتيجة الوكلاء بالباك-إند",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3220,
+        -400
+      ],
+      "continueOnFail": true,
+      "notes": "يرسل نتيجة تصنيف الوكلاء الثمانية إلى PATCH /api/reports/{report_id}/classification بالباك-إند.\nاضبط متغيرَي بيئة n8n: AMAN_BACKEND_URL (رابط الباك-إند العام بدون / بالنهاية) و N8N_CALLBACK_SECRET (يطابق نفس القيمة بـ .env للباك-إند).\ncontinueOnFail=true حتى لا يمنع فشل هذا النداء الرد على المستخدم إذا كان الباك-إند غير متاح مؤقتًا."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If - يوجد صورة مرفقة؟",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 1 - تصنيف أولي",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 1 - تصنيف أولي",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 1 - تصنيف أولي": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "If - تحقق التصنيف الأولي",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - تحقق التصنيف الأولي": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook - خطأ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 2 - تصنيف البلاغ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 2 - تصنيف البلاغ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 2 - تصنيف البلاغ",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 2 - تصنيف البلاغ": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent3": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 3 - تحديد الخطورة",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 3 - تحديد الخطورة",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 3 - تحديد الخطورة",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 3 - تحديد الخطورة": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent4": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 4 - تحليل الموقع",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 4 - تحليل الموقع",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 4": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 4 - تحليل الموقع",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 4 - تحليل الموقع": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent5": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 5 - التحقق من البلاغ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 5 - التحقق من البلاغ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 5": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 5 - التحقق من البلاغ",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 5 - التحقق من البلاغ": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent6": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 6 - القرار النهائي",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model 6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent 6 - القرار النهائي",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser 6": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent 6 - القرار النهائي",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent 6 - القرار النهائي": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent7": {
+      "main": [
+        [
+          {
+            "node": "If - هل يتم الإشعار",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - هل يتم الإشعار": {
+      "main": [
+        [
+          {
+            "node": "إعداد رسائل الإشعار",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "إعداد رسائل الإشعار": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Police",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ambulance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Civil Defense",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Multiple Agencies",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Police": {
+      "main": [
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambulance": {
+      "main": [
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Civil Defense": {
+      "main": [
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Multiple Agencies": {
+      "main": [
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Final Status (اربط SMS/إيميل/واتساب هنا)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Status (اربط SMS/إيميل/واتساب هنا)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - حفظ نتيجة الوكلاء بالباك-إند",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - يوجد صورة مرفقة؟": {
+      "main": [
+        [
+          {
+            "node": "Prep - بيانات Agent8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent 1 - تصنيف أولي",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep - بيانات Agent8": {
+      "main": [
+        [
+          {
+            "node": "Call Agent8(تحليل الصورة)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Agent8(تحليل الصورة)": {
+      "main": [
+        [
+          {
+            "node": "دمج نتيجة تحليل الصورة",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "دمج نتيجة تحليل الصورة": {
+      "main": [
+        [
+          {
+            "node": "AI Agent 1 - تصنيف أولي",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - حفظ نتيجة الوكلاء بالباك-إند": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - نجاح",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "787b2771-a444-499c-a7f1-a3e2a2341f44",
+  "meta": {
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "amanAiMasterWorkflow01",
+  "tags": []
+}

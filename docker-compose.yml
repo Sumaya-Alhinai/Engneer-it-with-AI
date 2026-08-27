@@ -1,0 +1,68 @@
+# تشغيل كامل النظام محليًا للتجربة قبل النشر:
+#   docker compose up --build
+# الباك-إند:  http://localhost:4000
+# n8n:        http://localhost:5678  (أنشئ الويب هوك report-agent من واجهة n8n أول مرة)
+# قاعدة البيانات: localhost:5433
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aman
+      POSTGRES_PASSWORD: aman_local_dev
+      POSTGRES_DB: AmanAI
+    ports:
+      - "5433:5432"
+    volumes:
+      - aman_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aman -d AmanAI"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./aman-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://aman:aman_local_dev@db:5432/AmanAI
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/report-agent
+      N8N_CALLBACK_SECRET: local_dev_secret_change_me
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000"
+      PUBLIC_BASE_URL: "http://backend:8000"
+      ENVIRONMENT: development
+      # أكواد موظفين للتجربة المحلية فقط. لم تعد تُزرع من schema.sql لأن الملف
+      # بمستودع Git — أي شخص يقرأه يدخل الداشبورد. الصيغة: كود:الاسم:القسم:مدير
+      SEED_STAFF_CODES: "DEV-ADMIN-7f2a:المدير العام::true,DEV-POLICE-3k9m:غرفة عمليات الشرطة:Police:false,DEV-AMB-8p4x:غرفة عمليات الإسعاف:Ambulance:false,DEV-CIVIL-2w6z:غرفة عمليات الدفاع المدني:Civil Defense:false"
+    ports:
+      - "4000:8000"
+    volumes:
+      - aman_uploads:/app/uploads
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      WEBHOOK_URL: "http://localhost:5678/"
+      # عقدة HTTP Request بالوركفلو تقرأ هذين المتغيرين لإرجاع نتيجة الوكلاء
+      # للباك-إند. بدونهما ينجح تشغيل الوكلاء لكن النتيجة لا تصل، فيبقى البلاغ
+      # بلا تصنيف. العنوان باسم الخدمة لا localhost:4000 — n8n داخل شبكة Docker.
+      AMAN_BACKEND_URL: "http://backend:8000"
+      N8N_CALLBACK_SECRET: "local_dev_secret_change_me"
+      # n8n يحجب قراءة متغيرات البيئة داخل العقد افتراضيًا لأسباب أمنية
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    volumes:
+      - aman_n8n_data:/home/node/.n8n
+      - ./n8n-workflows:/home/node/n8n-workflows:ro
+
+volumes:
+  aman_db_data:
+  aman_uploads:
+  aman_n8n_data:

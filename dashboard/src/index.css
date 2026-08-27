@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+
+:root {
+  --navy-dark: #0a1a33;
+  --navy: #0f2a52;
+  --primary-blue: #1b57d6;
+  --sky-blue: #3e8cf7;
+  --light-blue-bg: #eaf2ff;
+
+  --emergency-red: #e8433d;
+  --soft-red-bg: #fde8e7;
+
+  --text-dark: #1b1f2a;
+  --text-medium: #5b6478;
+  --text-light: #9aa3b2;
+  --divider: #e7eaf0;
+  --scaffold-bg: #f5f7fb;
+  --card-bg: #ffffff;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Tajawal', 'Segoe UI', sans-serif;
+  background: var(--scaffold-bg);
+  color: var(--text-dark);
+  direction: rtl;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}

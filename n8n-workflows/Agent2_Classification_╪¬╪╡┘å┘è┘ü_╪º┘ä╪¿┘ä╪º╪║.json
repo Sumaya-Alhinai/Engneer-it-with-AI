@@ -1,0 +1,235 @@
+{
+  "name": "Agent2(تصنيف البلاغ)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "report"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "report_id"
+            },
+            {
+              "name": "selected_incident_type"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -64
+      ],
+      "id": "570c47da-9f38-4fcc-aa41-839a4e2a78e6",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=البلاغ:\n{{$json.report}}\n\nالتصنيف الأولي الذي حدده النظام: {{$json.selected_incident_type}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "أنت Agent 2 في نظام Aman AI.\n\nمهمتك التحقق من أن التصنيف الأولي لنوع البلاغ يطابق فعلاً وصف البلاغ.\n\nالقيم المسموح بها لنوع البلاغ:\ntraffic_accident\nfire\nmedical\nflood\nroad_block\nother\n\nالتعليمات:\n- إذا كان التصنيف الأولي صحيحًا، أعد نفس النوع في confirmed_incident_type واجعل type_match = true.\n- إذا كان غير صحيح، صحّح النوع حسب الوصف الفعلي واجعل type_match = false.\n- أعط درجة ثقة (confidence) من 0 إلى 1.\n- اكتب سببًا مختصرًا وواضحًا في reason.\n- أخرج النتيجة فقط حسب Structured Output Parser."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -112,
+        -64
+      ],
+      "id": "a2297d85-acbc-4583-99ad-84fbe368591e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        144
+      ],
+      "id": "b03fcd0f-1757-461f-9b64-8af637ada22e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"confirmed_incident_type\": \"traffic_accident\",\n  \"type_match\": true,\n  \"confidence\": 0.98,\n  \"reason\": \"وصف البلاغ يتوافق مع التصنيف الأولي.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        144
+      ],
+      "id": "84e916c5-8fab-416b-bd36-64bab5fb2933",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "1Df1AszQJyMhvqDB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/1Df1AszQJyMhvqDB",
+          "cachedResultName": "Agent3(تحديد مستوى الخطورة)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "report": "={{$json.report}}",
+            "user_id": "={{$json.user_id}}",
+            "report_id": "={{$json.report_id}}",
+            "confirmed_incident_type": "={{$json.confirmed_incident_type}}",
+            "type_match": "={{$json.type_match}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "confirmed_incident_type",
+              "displayName": "confirmed_incident_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "type_match",
+              "displayName": "type_match",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -64
+      ],
+      "id": "38a3088a-50a6-4a07-b236-33ab49e41156",
+      "name": "Call 'Agent3(تحديد مستوى الخطورة)'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Agent3(تحديد مستوى الخطورة)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4fab671b-959e-4cb9-9492-a4a09dbb0ec7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "ckKIBlxO9x4CV0Zs",
+  "tags": []
+}

@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+psycopg[binary]
+psycopg_pool
+python-dotenv
+pydantic
+python-multipart
+httpx
+opencv-python-headless
+pillow
+redis
+numpy
+pillow-heif
+piexif   # للاختبارات فقط — توليد صور ببيانات كاميرا

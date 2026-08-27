@@ -1,0 +1,250 @@
+{
+  "name": "Agent3(تحديد مستوى الخطورة)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "report"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "report_id"
+            },
+            {
+              "name": "confirmed_incident_type"
+            },
+            {
+              "name": "type_match",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -48
+      ],
+      "id": "1b0b1a6e-cdc8-4a5b-adc8-9f5a5379eabc",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=قيّم مستوى خطورة البلاغ التالي:\n\nنوع البلاغ المؤكد: {{$json.confirmed_incident_type}}\nهل يطابق تصنيف المستخدم الوصف الفعلي (type_match): {{$json.type_match}}\n\nالوصف:\n{{$json.report}}\n\nقيّم مستوى الخطورة فقط.\n\nأرجع النتيجة بصيغة JSON فقط حسب الـ Output Parser.\nلا تضف أي شرح أو أي نص خارج JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Risk Assessment Agent in Aman AI.\n\nYour job is ONLY to assess the severity of the incident.\n\nInputs:\n- report\n- confirmed_incident_type\n- type_match\n\nRules:\n\n1. If type_match is false:\n- Set priority to \"low\"\n- risk_score = 5\n- Explain that the report needs manual review.\n\n2. Otherwise analyze:\n- number of injured people\n- fire size\n- trapped people\n- danger to life\n- danger to public\n- urgency\n\nPriority Levels:\n\ncritical\n- Immediate danger to life\n- Multiple injuries\n- Large fire\n- Building collapse\n- Drowning\n- Explosion\n\nhigh\n- Serious injuries\n- Vehicle trapped\n- Large accident\n- Fire spreading\n\nmedium\n- Minor injuries\n- Small fire\n- Needs response but not life threatening\n\nlow\n- No injuries\n- Small issue\n- Informational report\n\nReturn ONLY JSON.\n\nrisk_score MUST be an integer from 0 to 100 representing overall risk percentage (0 = no risk at all, 100 = maximum/critical life-threatening risk). NEVER return a decimal fraction like 0.8, and NEVER a 1-10 scale — always 0-100.\nSuggested bands matching the priority levels above: critical=90-100, high=65-89, medium=35-64, low=0-34."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -128,
+        -48
+      ],
+      "id": "a0f2a9e0-09e9-4c12-897e-80afda92ab23",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        160
+      ],
+      "id": "c71fc723-785a-4a61-a215-a06867bf1ab4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"priority\": \"low\", \"risk_score\": 15, \"risk_reason\": \"سبب تقييم مستوى الخطورة\"}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        160
+      ],
+      "id": "29479878-db96-4140-b861-db7be21a826a",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "lC0M3pNobrAJmh7B",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/lC0M3pNobrAJmh7B",
+          "cachedResultName": "Agent4(تحليل الموقع)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "latitude": "={{$json.latitude}}",
+            "longitude": "={{$json.longitude}}",
+            "report": "={{$json.report}}",
+            "user_id": "={{$json.user_id}}",
+            "report_id": "={{$json.report_id}}",
+            "location_text": "={{$json.location_text}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "latitude",
+              "displayName": "latitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "longitude",
+              "displayName": "longitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "location_text",
+              "displayName": "location_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        -48
+      ],
+      "id": "1436c0b1-e334-4573-a5ee-0488f4a4752c",
+      "name": "Call 'Agent4(تحليل الموقع)'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Agent4(تحليل الموقع)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ec586cb4-e16d-48a4-8d6f-96ecbda3ee13",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "1Df1AszQJyMhvqDB",
+  "tags": []
+}

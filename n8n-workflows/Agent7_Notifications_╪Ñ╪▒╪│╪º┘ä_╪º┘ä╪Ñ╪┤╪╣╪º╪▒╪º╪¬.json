@@ -1,0 +1,396 @@
+{
+  "name": "Agent 7 (إرسال البلاغ والإشعارات)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "report"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "report_id"
+            },
+            {
+              "name": "department"
+            },
+            {
+              "name": "summary"
+            },
+            {
+              "name": "priority"
+            },
+            {
+              "name": "location"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -432,
+        -64
+      ],
+      "id": "cbeddb37-ca8e-450a-b33b-1ff25be48d3a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f3fefc48-ae4e-4456-aefb-7f07e2d2f557",
+              "leftValue": "={{$json.notify}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        -64
+      ],
+      "id": "92637407-1777-44e2-a79d-b9e364d1539f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "82f04732-97c9-45f0-a944-0605e00ef1c4",
+              "name": "=agency_message",
+              "value": "=={{ '🚨 بلاغ جديد\\n\\nرقم البلاغ: ' + $json.report_id + '\\nنوع البلاغ: ' + $json.incident_type + '\\nالجهة المختصة: ' + $json.department + '\\nالأولوية: ' + $json.urgency + '\\nالسبب: ' + $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "73e07289-228c-468f-b492-32cff6c1984d",
+              "name": "=citizen_message",
+              "value": "=={{ '✅ تم استلام بلاغك بنجاح\\n\\nرقم البلاغ: ' + $json.report_id + '\\nتم تحويل البلاغ إلى: ' + $json.department + '\\n\\nشكراً لتعاونك.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        -160
+      ],
+      "id": "e0583b8c-c12e-4953-bc84-f6309cd9bcc9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Police",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4c80cb9c-4ad0-4eba-afa8-f6b93819a90f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2a5e2afb-5649-4b3d-83e2-1827aed0c2f1",
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Ambulance",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0c1c9c85-2d6f-4c69-ae3f-4f62960bfa67",
+                    "leftValue": "={{$json.department}}",
+                    "rightValue": "Civil Defense",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        -160
+      ],
+      "id": "256f3abf-81fd-4ffd-82e2-c8433cb24501",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cad26cf-b1f1-4d93-b20d-e7857b6cd946",
+              "name": "agency",
+              "value": "Police",
+              "type": "string"
+            },
+            {
+              "id": "6dbad22f-4b2c-4d85-bd5e-b38a68f37323",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "dc878af6-3a02-46f0-b7ac-02255431a236",
+              "name": "dispatch_status",
+              "value": "Sent to Police",
+              "type": "string"
+            },
+            {
+              "id": "a6a6f7e1-b096-4fd2-8465-87082150174d",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى شرطة عُمان السلطانية، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -432
+      ],
+      "id": "52b4cabc-7f87-4e95-9bcc-6a596e5bb9b8",
+      "name": "Police"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b182904-4033-4c17-9ee7-7e13885f8b39",
+              "name": "agency",
+              "value": "Ambulance",
+              "type": "string"
+            },
+            {
+              "id": "a9a3bc05-9e92-421e-9eaa-259899a69ea0",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "93c075b5-134d-4564-b6eb-5e2b8b1c10ad",
+              "name": "dispatch_status",
+              "value": "Sent to Ambulance",
+              "type": "string"
+            },
+            {
+              "id": "ed8f200b-a7e7-4a00-a19b-893b9d7b2bc0",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى هيئة الإسعاف، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -144
+      ],
+      "id": "7cdb6929-82e2-4140-8e79-6381bdcbada5",
+      "name": "Ambulance"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23c49ff6-e6be-4c95-b504-2420d6255287",
+              "name": "agency",
+              "value": "Civil Defense",
+              "type": "string"
+            },
+            {
+              "id": "0bd51747-edbe-468d-9af2-a9904e105fb1",
+              "name": "notification_status",
+              "value": "Sent",
+              "type": "string"
+            },
+            {
+              "id": "495fc975-aac8-4830-b6a4-aec10302281c",
+              "name": "dispatch_status",
+              "value": "Sent to Civil Defense",
+              "type": "string"
+            },
+            {
+              "id": "a99f784b-a618-473f-ac83-8d2cbca464a4",
+              "name": "user_message",
+              "value": "تم استلام بلاغكم وتحويله إلى الدفاع المدني والإسعاف، وجارٍ العمل عليه.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        144
+      ],
+      "id": "eee6c2df-d9e2-43e8-b1ed-4b1dfc7a76c1",
+      "name": "Civil Defense"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Police",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ambulance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Civil Defense",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Police": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6a962a86-14e0-4ab9-8d34-636c112290a9",
+  "meta": {
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "95DK9gGuKazBfUom",
+  "tags": []
+}

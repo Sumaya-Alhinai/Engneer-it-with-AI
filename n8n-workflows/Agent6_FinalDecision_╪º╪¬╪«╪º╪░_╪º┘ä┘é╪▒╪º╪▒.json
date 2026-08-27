@@ -1,0 +1,242 @@
+{
+  "name": "Agent6 (اتخاذ القرارمركز القيادة الذكي)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -48
+      ],
+      "id": "dcc1ec68-4d85-42e8-8b35-3855f1fd6a42",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=حلل بيانات البلاغ التالية واتخذ القرار المناسب:\n\n{{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Final Decision Engine for Aman AI, an AI-powered emergency and incident management system.\n\nAnalyze all data received from previous agents (incident type, priority, risk score, location analysis, verification status and confidence) and make the final operational decision.\n\nReturn ONLY these fields as JSON:\n\n- final_decision: one of dispatch, monitor, request_more_information, reject\n- department: one of Police, Ambulance, Civil Defense, Multiple Agencies, None\n- urgency: one of critical, high, medium, low\n- reason: short explanation for the decision\n- notify_citizen: true if the reporter should receive a notification, false otherwise\n\nDecision Rules:\n- Dispatch immediately if the incident is verified and has High or Critical priority.\n- If confidence is low or verification failed, request more information.\n- Reject reports that are clearly invalid, duplicate, or false.\n- Choose the department based on the incident type (traffic_accident -> Police, fire -> Civil Defense, medical -> Ambulance, flood -> Civil Defense, road_block -> Police).\n- If multiple agencies are required, return \"Multiple Agencies\".\n- Keep the reason concise.\n\nReturn ONLY valid JSON, no explanations outside the JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -112,
+        -48
+      ],
+      "id": "316339a3-3d0e-42fa-b833-559eac5e4515",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        160
+      ],
+      "id": "5663ee47-0ef2-4029-8de0-7dbbf6eb3245",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"final_decision\": \"dispatch\",\n  \"department\": \"Police\",\n  \"urgency\": \"critical\",\n  \"reason\": \"حادث مروري موثوق مع إصابات ويحتاج استجابة فورية.\",\n  \"notify_citizen\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        160
+      ],
+      "id": "fb5dde86-a146-4b68-b793-d600e3b07c46",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "95DK9gGuKazBfUom",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/95DK9gGuKazBfUom",
+          "cachedResultName": "Agent 7 (إرسال البلاغ والإشعارات)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "report": "={{ $json.report }}",
+            "user_id": "={{ $json.user_id }}",
+            "report_id": "={{ $json.report_id }}",
+            "department": "={{ $json.department }}",
+            "summary": "={{ $json.summary }}",
+            "priority": "={{ $json.priority }}",
+            "location": "={{ $json.location }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -48
+      ],
+      "id": "f15041ea-9c1d-4fdf-8146-20175f468147",
+      "name": "Call 'Agent 7 (إرسال البلاغ والإشعارات)'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Agent 7 (إرسال البلاغ والإشعارات)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d2df4221-8ad5-4a45-8a8d-e9013a08c134",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "xk5CfKfHCZEV4pLH",
+  "tags": []
+}

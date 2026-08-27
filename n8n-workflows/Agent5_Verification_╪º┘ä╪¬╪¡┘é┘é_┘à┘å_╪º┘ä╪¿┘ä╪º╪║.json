@@ -1,0 +1,186 @@
+{
+  "name": "Agent5 (التحقق من البلاغ)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "report"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "report_id"
+            },
+            {
+              "name": "latitude",
+              "type": "number"
+            },
+            {
+              "name": "longitude",
+              "type": "number"
+            },
+            {
+              "name": "location_text"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -64
+      ],
+      "id": "5c43f0ff-61a1-478e-b0a3-6324197705ca",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Verify this emergency report.\n\nReport Data:\n\n{{ JSON.stringify($json) }}\n\nReturn only the structured JSON output.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Verification Agent for Aman AI.\n\nYour task is to verify emergency reports before they are dispatched.\n\nAnalyze:\n- Incident type\n- Priority\n- Location\n- Wilayat\n- Summary\n\nDetermine:\n1. Whether the report is credible.\n2. Whether enough information exists.\n3. Whether the location is usable.\n4. Whether the report should be trusted.\n\nAlways return only the structured output.\nNever add explanations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -256,
+        -64
+      ],
+      "id": "e99c461c-5c19-42c0-8813-e3b45fd49377",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        128
+      ],
+      "id": "aa484a0e-d504-4ddd-97a5-9c2ea91f6b9b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"verified\": true,\n  \"confidence\": 0.95,\n  \"verification_status\": \"verified\",\n  \"reason\": \"The report contains sufficient information and appears credible.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        128
+      ],
+      "id": "345a3132-e73f-480e-ad4d-e7e227e543df",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "xk5CfKfHCZEV4pLH",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/xk5CfKfHCZEV4pLH",
+          "cachedResultName": "Agent6 (اتخاذ القرارمركز القيادة الذكي)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        -64
+      ],
+      "id": "27ec8acc-4e39-4323-81bc-6c84bd1e8a80",
+      "name": "Call 'Agent6 (اتخاذ القرارمركز القيادة الذكي)'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Agent6 (اتخاذ القرارمركز القيادة الذكي)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "eda1649b-7911-4b92-8f64-9db9048e4711",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "OjdIMbLGeE6vf5MJ",
+  "tags": []
+}

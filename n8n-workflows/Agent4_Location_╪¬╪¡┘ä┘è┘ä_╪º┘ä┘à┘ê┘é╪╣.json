@@ -1,0 +1,252 @@
+{
+  "name": "Agent4(تحليل الموقع)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "report"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "report_id"
+            },
+            {
+              "name": "latitude",
+              "type": "number"
+            },
+            {
+              "name": "longitude",
+              "type": "number"
+            },
+            {
+              "name": "location_text"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        -80
+      ],
+      "id": "cc235f61-5375-464a-8b08-195c18c66346",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=أنت وكيل متخصص في تحليل موقع البلاغات الطارئة.\n\nبيانات البلاغ:\n- نص البلاغ: {{$json.report}}\n- معرّف المستخدم: {{$json.user_id}}\n- معرّف البلاغ: {{$json.report_id}}\n- خط العرض: {{$json.latitude}}\n- خط الطول: {{$json.longitude}}\n- وصف الموقع: {{$json.location_text}}\n\nحلّل الموقع وحدد:\n1. هل بيانات الموقع صالحة أم غير مكتملة.\n2. الولاية أو المدينة إن أمكن.\n3. المنطقة أو الحي إن أمكن.\n4. هل الوصول للموقع سهل أم صعب أم غير معروف.\n5. هل موقع البلاغ قد يزيد مستوى الخطورة.\n6. ملاحظة مختصرة عن الموقع.\n\nأرجع النتيجة فقط بصيغة JSON حسب الـ Structured Output Parser، ولا تضف أي نص خارج JSON.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -160,
+        -80
+      ],
+      "id": "eec94ffc-ccf5-428f-9310-be81873c06a4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        128
+      ],
+      "id": "daf59ead-6dca-4e2c-b89b-18dd8d1a191c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "QIYTtIzT8Lpa7cGA",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"location_status\": \"valid\",\n  \"wilayat\": \"Muscat\",\n  \"area\": \"Al Khuwair\",\n  \"accessibility\": \"easy\",\n  \"location_risk\": \"low\",\n  \"location_note\": \"الموقع واضح ويمكن الوصول إليه بسهولة\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        128
+      ],
+      "id": "6c1892d1-32d0-4be1-96a0-992b96603cf3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OjdIMbLGeE6vf5MJ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/OjdIMbLGeE6vf5MJ",
+          "cachedResultName": "Agent5 (التحقق من البلاغ)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "latitude": "={{ $('When Executed by Another Workflow').item.json.latitude }}",
+            "longitude": "={{ $('When Executed by Another Workflow').item.json.longitude }}",
+            "report": "={{ $('When Executed by Another Workflow').item.json.report }}",
+            "user_id": "={{ $('When Executed by Another Workflow').item.json.user_id }}",
+            "report_id": "={{ $('When Executed by Another Workflow').item.json.report_id }}",
+            "location_text": "={{ $json.output.location_text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "report_id",
+              "displayName": "report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "latitude",
+              "displayName": "latitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "longitude",
+              "displayName": "longitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "location_text",
+              "displayName": "location_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        -80
+      ],
+      "id": "be0c2e51-1f36-4c08-ae2d-60980d7cf24e",
+      "name": "Call 'Agent5 (التحقق من البلاغ)'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Call 'Agent5 (التحقق من البلاغ)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "67f25d7e-a4aa-4bf8-afa4-6464a0b3a1b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30eb36b603336db6c36865b6cf026afc1cb211b0d8cb00c927384ce964131abf"
+  },
+  "nodeGroups": [],
+  "id": "lC0M3pNobrAJmh7B",
+  "tags": []
+}
