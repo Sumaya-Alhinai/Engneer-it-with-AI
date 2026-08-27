@@ -23,7 +23,10 @@ export default function AppLanding() {
             مع مشاركة موقعك وتفاصيل الحالة مع الجهة المختصة.
           </p>
           <div className="app-landing__actions">
-            <a className="app-landing__download" href="/downloads/aman-ai.apk" download>
+            <a
+              className="app-landing__download"
+              href="https://github.com/Sumaya-Alhinai/Engneer-it-with-AI/releases/latest/download/aman-ai.apk"
+            >
               <span className="app-landing__download-icon" aria-hidden="true">↓</span>
               <span>
                 <small>متوفر لنظام Android</small>

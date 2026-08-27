@@ -1,0 +1,56 @@
+name: Build Aman AI APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: Public API URL backed by the same Supabase database
+        required: true
+        type: string
+      release_tag:
+        description: Release tag to publish
+        required: true
+        default: v1.0.0
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Flutter packages
+        working-directory: app
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: app
+        run: flutter build apk --release --dart-define=API_BASE_URL="${{ inputs.api_base_url }}"
+
+      - name: Name the downloadable APK
+        run: |
+          mkdir -p release
+          cp app/build/app/outputs/flutter-apk/app-release.apk release/aman-ai.apk
+
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: Aman AI ${{ inputs.release_tag }}
+          generate_release_notes: true
+          files: release/aman-ai.apk
