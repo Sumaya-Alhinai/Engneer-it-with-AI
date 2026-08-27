@@ -45,21 +45,26 @@ docker compose up --build
 
 ## النشر الفعلي — بالترتيب
 
-### 1. الباك-إند → Render (أو Railway/Fly.io بنفس الفكرة)
-- ارفع مجلد `aman-backend` كمستودع Git منفصل (فيه Dockerfile و render.yaml جاهزين)
-- على Render: New → Blueprint → اختر المستودع → يقرأ `render.yaml` تلقائيًا وينشئ الخدمة + قاعدة PostgreSQL معًا
-- بعد أول نشر، اضبط بمتغيرات البيئة بلوحة Render: `N8N_WEBHOOK_URL`, `N8N_CALLBACK_SECRET`, `PUBLIC_BASE_URL` (رابط Render نفسه بعد ما يتولّد)
+### 1. قاعدة البيانات → Supabase
+- تم تطبيق `aman-backend/app/schema.sql` على مشروع Supabase.
+- من Supabase: `Project Settings → Database → Connection string` انسخ رابط Postgres وضعه كمتغير `DATABASE_URL` في استضافة الباك-إند.
+- لا تضع كلمة المرور في GitHub أو داخل ملفات الواجهة.
 
-### 2. n8n → أي استضافة (n8n Cloud هو الأسهل، أو self-host)
+### 2. الباك-إند → Render (أو Railway/Fly.io بنفس الفكرة)
+- ارفع مجلد `aman-backend` كمستودع Git منفصل (فيه Dockerfile و`render.yaml` جاهزان).
+- على Render: New → Blueprint → اختر المستودع، ثم أضف `DATABASE_URL` يدويًا من Supabase؛ ملف `render.yaml` لم يعد ينشئ قاعدة PostgreSQL ثانية.
+- اضبط أيضًا: `ALLOWED_ORIGINS`, `N8N_WEBHOOK_URL`, `N8N_CALLBACK_SECRET`, `PUBLIC_BASE_URL`.
+
+### 3. n8n → أي استضافة (n8n Cloud هو الأسهل، أو self-host)
 راجع `n8n-workflows/README_INTEGRATION.md` بالتفصيل — يشمل ربط `AMAN_BACKEND_URL` و `N8N_CALLBACK_SECRET` رجوع بالاتجاه المعاكس.
 
-### 3. الداشبورد → Vercel/Netlify (ثابت 100%، بناء بأمر واحد)
+### 4. الداشبورد → Vercel/Netlify (ثابت 100%، بناء بأمر واحد)
 ```bash
 cd dashboard && npm run build   # ناتج build/ جاهز للرفع
 ```
 اضبط `VITE_API_BASE` بمتغيرات بيئة منصة النشر لرابط الباك-إند من الخطوة 1.
 
-### 4. التطبيق → المتاجر
+### 5. التطبيق → المتاجر
 - **أندرويد**: `app/android/KEYSTORE_INSTRUCTIONS.md` (خطوة بخطوة)
 - **iOS**: `app/IOS_PUBLISHING.md` — **يتطلب جهاز Mac إجباريًا**، هذا قيد من Apple نفسها وليس قيدًا مني
 - قبل البناء النهائي: `flutter build ... --dart-define=API_BASE_URL=https://your-backend.onrender.com`

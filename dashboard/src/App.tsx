@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import MapView from './components/MapView';
 import ReportList, { type Filters } from './components/ReportList';
 import ReportDetail from './components/ReportDetail';
+import AppLanding from './components/AppLanding';
 import { AuthError, fetchReports, staffLogin, staffLogout, updateReportStatus } from './api';
 import type { Report, StaffSession } from './types';
 import './App.css';
@@ -18,6 +19,10 @@ function loadStoredSession(): StaffSession | null {
 }
 
 export default function App() {
+  if (window.location.pathname === '/app' || window.location.pathname === '/app/') {
+    return <AppLanding />;
+  }
+
   const [session, setSession] = useState<StaffSession | null>(() => loadStoredSession());
   const [codeInput, setCodeInput] = useState('');
   const [authError, setAuthError] = useState('');

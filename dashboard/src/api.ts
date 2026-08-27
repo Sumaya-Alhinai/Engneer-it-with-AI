@@ -2,11 +2,14 @@ import type { Report, StaffSession } from './types';
 
 /// عنوان الباك-إند. اضبط VITE_API_BASE في dashboard/.env.local لتشغيله عبر رابط عام (نفق) أو جهاز مختلف.
 export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+const IS_SUPABASE_FUNCTION = API_BASE.includes('/functions/v1/staff-api');
+const apiPath = (legacyPath: string, functionPath: string) =>
+  `${API_BASE}${IS_SUPABASE_FUNCTION ? functionPath : legacyPath}`;
 
 export class AuthError extends Error {}
 
 export async function staffLogin(code: string): Promise<StaffSession> {
-  const res = await fetch(`${API_BASE}/api/auth/staff/login`, {
+  const res = await fetch(apiPath('/api/auth/staff/login', '/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
@@ -17,14 +20,14 @@ export async function staffLogin(code: string): Promise<StaffSession> {
 }
 
 export async function staffLogout(token: string): Promise<void> {
-  await fetch(`${API_BASE}/api/auth/staff/logout`, {
+  await fetch(apiPath('/api/auth/staff/logout', '/logout'), {
     method: 'POST',
     headers: { 'x-staff-token': token },
   }).catch(() => {});
 }
 
 export async function fetchReports(token: string, department?: string): Promise<Report[]> {
-  const url = new URL(`${API_BASE}/api/reports/staff`);
+  const url = new URL(apiPath('/api/reports/staff', '/reports'));
   if (department) url.searchParams.set('department', department);
   const res = await fetch(url, { headers: { 'x-staff-token': token } });
   if (res.status === 401) throw new AuthError('انتهت الجلسة، يرجى تسجيل الدخول مجددًا');
@@ -33,7 +36,7 @@ export async function fetchReports(token: string, department?: string): Promise<
 }
 
 export async function updateReportStatus(token: string, reportId: string, status: string): Promise<Report> {
-  const res = await fetch(`${API_BASE}/api/reports/${reportId}/status`, {
+  const res = await fetch(apiPath(`/api/reports/${reportId}/status`, `/reports/${encodeURIComponent(reportId)}/status`), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'x-staff-token': token },
     body: JSON.stringify({ status }),
@@ -49,7 +52,7 @@ export async function updateReportStatus(token: string, reportId: string, status
 /** البلاغات التي استنفدت محاولات خط الوكلاء وتحتاج مراجعة بشرية.
  *  لا تظهر بقائمة القسم لأن حقل department يبقى فارغًا عند فشل التصنيف. */
 export async function fetchReportsNeedingReview(token: string): Promise<Report[]> {
-  const res = await fetch(`${API_BASE}/api/reports/needs-review`, {
+  const res = await fetch(apiPath('/api/reports/needs-review', '/reports/needs-review'), {
     headers: { 'x-staff-token': token },
   });
   if (res.status === 401) throw new AuthError('انتهت الجلسة، يرجى تسجيل الدخول مجددًا');
