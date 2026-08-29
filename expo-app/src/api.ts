@@ -58,7 +58,7 @@ export async function publicAlerts(): Promise<PublicAlert[]> {
 
 export async function submitReport(input: {
   token: string;
-  type: string;
+  type?: string;
   description: string;
   locationText: string;
   latitude?: number;
@@ -66,11 +66,12 @@ export async function submitReport(input: {
   media: MediaAsset[];
 }): Promise<{ report_id: string }> {
   const form = new FormData();
-  form.append('type', input.type);
+  form.append('type', input.type ?? '');
   form.append('description', input.description);
   form.append('location_text', input.locationText);
   if (input.latitude != null) form.append('latitude', String(input.latitude));
   if (input.longitude != null) form.append('longitude', String(input.longitude));
+  form.append('media_metadata', JSON.stringify(input.media.map((asset) => asset.metadata ?? null)));
   for (const asset of input.media) {
     if (asset.file) form.append('media', asset.file, asset.name);
     else form.append('media', { uri: asset.uri, name: asset.name, type: asset.type } as unknown as Blob);
@@ -81,4 +82,3 @@ export async function submitReport(input: {
     body: form,
   }));
 }
-

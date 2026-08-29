@@ -18,6 +18,14 @@ Deno.test("maps structured analysis without self-authorizing dispatch", () => {
       priority: "critical" as const,
       risk_score: 120,
       reason: "خطر مباشر",
+      evidence: ["دخان كثيف"],
+      uncertainty: "محدودة",
+    },
+    triage: {
+      is_incident_report: true,
+      incident_relevance: "credible_incident" as const,
+      confidence: 0.95,
+      reason: "دليل مرئي متسق",
     },
     location: {
       status: "valid" as const,
@@ -41,6 +49,10 @@ Deno.test("maps structured analysis without self-authorizing dispatch", () => {
       matches_reported_type: null,
       ai_generated_suspected: null,
       ai_generated_reason: "",
+      metadata_status: "unavailable" as const,
+      captured_at_status: "unknown" as const,
+      location_match: "unknown" as const,
+      metadata_note: "لا توجد بيانات",
     },
     final: {
       recommended_action: "dispatch" as const,

@@ -120,6 +120,10 @@ export default function ReportDetail({ report, onUpdateStatus, updating }: Props
           </div>
           <div className="report-detail__exif">
             <div className="report-detail__exif-row">
+              <span>هل المحتوى بلاغ حادث؟</span>
+              <strong>{report.agent_analysis.triage.is_incident_report ? 'نعم — يحتاج فرزاً' : 'لا يبدو بلاغاً حقيقياً'} · {report.agent_analysis.triage.reason}</strong>
+            </div>
+            <div className="report-detail__exif-row">
               <span>الاستقبال والتلخيص</span>
               <strong>{report.agent_analysis.intake.summary}</strong>
             </div>
@@ -186,17 +190,17 @@ export default function ReportDetail({ report, onUpdateStatus, updating }: Props
       {report.media_exif && report.media_exif.length > 0 && (
         <div className="report-detail__section">
           <h3>تفاصيل الصور (للتحقق الداخلي)</h3>
-          {report.media_exif.map((exif) => {
+          {report.media_exif.map((exif, index) => {
             const hasGps = exif.gps_latitude != null && exif.gps_longitude != null;
             return (
-              <div key={exif.path} className="report-detail__exif">
+              <div key={exif.path ?? exif.filename ?? index} className="report-detail__exif">
                 <div className="report-detail__exif-row">
                   <span>تاريخ/وقت الالتقاط</span>
                   <strong>{exif.captured_at ?? 'غير متوفر بالصورة'}</strong>
                 </div>
                 <div className="report-detail__exif-row">
                   <span>الجهاز</span>
-                  <strong>{exif.device ?? 'غير متوفر'}</strong>
+                  <strong>{exif.device ?? ([exif.device_make, exif.device_model].filter(Boolean).join(' ') || 'غير متوفر')}</strong>
                 </div>
                 <div className="report-detail__exif-row">
                   <span>موقع GPS المُلتقط بالصورة</span>

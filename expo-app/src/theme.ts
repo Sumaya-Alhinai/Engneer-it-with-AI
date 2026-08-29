@@ -41,6 +41,7 @@ export const incidentLabel = (value?: string | null) =>
   } as Record<string, string>)[value || ''] ?? value ?? 'بلاغ طارئ';
 
 export const priorityLabel = (value?: string | null) => {
+  if (value === 'none') return 'ليس بلاغاً طارئاً';
   if (value === 'critical') return 'حرجة';
   if (value === 'high') return 'عالية';
   if (value === 'medium') return 'متوسطة';

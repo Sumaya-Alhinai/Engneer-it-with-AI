@@ -77,18 +77,19 @@ Deno.serve(async (request) => {
       }),
     )).filter(Boolean);
     const exif = Array.isArray(report.media_exif) ? report.media_exif : [];
-    const hasCameraExif = exif.some((entry: Record<string, unknown>) =>
-      Boolean(entry?.device || entry?.captured_at)
-    );
+    const coordinates = report.latitude != null && report.longitude != null
+      ? { latitude: Number(report.latitude), longitude: Number(report.longitude) }
+      : null;
     const result = await analyzeReport({
       report_id: report.public_code,
       user_id: report.user_id,
-      selected_type: report.type || "other",
+      selected_type: report.type || null,
       description: report.description || report.report_text || "",
       location_text: report.location_text || "",
-      has_coordinates: report.latitude != null && report.longitude != null,
+      has_coordinates: coordinates !== null,
+      coordinates,
       image_urls: imageUrls,
-      has_camera_exif: hasCameraExif,
+      image_metadata: exif.slice(0, 3),
     });
     const update = analysisToReportUpdate(
       result.analysis,

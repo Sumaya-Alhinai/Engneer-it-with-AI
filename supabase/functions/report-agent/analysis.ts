@@ -1,19 +1,31 @@
 export type ReportAnalysis = {
   intake: {
-    selected_incident_type: string;
+    selected_incident_type: string | null;
     confidence: number;
     summary: string;
     location_text: string;
   };
   classification: {
     confirmed_incident_type: string;
-    type_match: boolean;
+    type_match: boolean | null;
     confidence: number;
     reason: string;
   };
   severity: {
-    priority: "critical" | "high" | "medium" | "low";
+    priority: "critical" | "high" | "medium" | "low" | "none";
     risk_score: number;
+    reason: string;
+    evidence: string[];
+    uncertainty: string;
+  };
+  triage: {
+    is_incident_report: boolean;
+    incident_relevance:
+      | "credible_incident"
+      | "possible_incident"
+      | "non_incident"
+      | "unclear";
+    confidence: number;
     reason: string;
   };
   location: {
@@ -38,6 +50,10 @@ export type ReportAnalysis = {
     matches_reported_type: boolean | null;
     ai_generated_suspected: boolean | null;
     ai_generated_reason: string;
+    metadata_status: "available" | "partial" | "unavailable";
+    captured_at_status: "recent" | "old" | "future" | "unknown";
+    location_match: "match" | "mismatch" | "unknown";
+    metadata_note: string;
   };
   final: {
     recommended_action:
@@ -51,7 +67,7 @@ export type ReportAnalysis = {
       | "Civil Defense"
       | "Multiple Agencies"
       | "Manual Review";
-    urgency: "critical" | "high" | "medium" | "low";
+    urgency: "critical" | "high" | "medium" | "low" | "none";
     reason: string;
     notify_citizen: boolean;
   };
@@ -68,6 +84,7 @@ export const reportAnalysisSchema = {
     "intake",
     "classification",
     "severity",
+    "triage",
     "location",
     "verification",
     "image",
@@ -76,20 +93,31 @@ export const reportAnalysisSchema = {
   ],
   properties: {
     intake: objectSchema({
-      selected_incident_type: incidentTypeSchema(),
+      selected_incident_type: nullableIncidentTypeSchema(),
       confidence: scoreSchema(),
       summary: { type: "string" },
       location_text: { type: "string" },
     }),
     classification: objectSchema({
       confirmed_incident_type: incidentTypeSchema(),
-      type_match: { type: "boolean" },
+      type_match: { type: ["boolean", "null"] },
       confidence: scoreSchema(),
       reason: { type: "string" },
     }),
     severity: objectSchema({
-      priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
+      priority: { type: "string", enum: ["critical", "high", "medium", "low", "none"] },
       risk_score: { type: "integer", minimum: 0, maximum: 100 },
+      reason: { type: "string" },
+      evidence: { type: "array", items: { type: "string" }, maxItems: 8 },
+      uncertainty: { type: "string" },
+    }),
+    triage: objectSchema({
+      is_incident_report: { type: "boolean" },
+      incident_relevance: {
+        type: "string",
+        enum: ["credible_incident", "possible_incident", "non_incident", "unclear"],
+      },
+      confidence: scoreSchema(),
       reason: { type: "string" },
     }),
     location: objectSchema({
@@ -132,6 +160,19 @@ export const reportAnalysisSchema = {
       matches_reported_type: { type: ["boolean", "null"] },
       ai_generated_suspected: { type: ["boolean", "null"] },
       ai_generated_reason: { type: "string" },
+      metadata_status: {
+        type: "string",
+        enum: ["available", "partial", "unavailable"],
+      },
+      captured_at_status: {
+        type: "string",
+        enum: ["recent", "old", "future", "unknown"],
+      },
+      location_match: {
+        type: "string",
+        enum: ["match", "mismatch", "unknown"],
+      },
+      metadata_note: { type: "string" },
     }),
     final: objectSchema({
       recommended_action: {
@@ -148,7 +189,7 @@ export const reportAnalysisSchema = {
           "Manual Review",
         ],
       },
-      urgency: { type: "string", enum: ["critical", "high", "medium", "low"] },
+      urgency: { type: "string", enum: ["critical", "high", "medium", "low", "none"] },
       reason: { type: "string" },
       notify_citizen: { type: "boolean" },
     }),
@@ -183,6 +224,22 @@ function incidentTypeSchema() {
       "road_block",
       "security",
       "other",
+    ],
+  };
+}
+
+function nullableIncidentTypeSchema() {
+  return {
+    type: ["string", "null"],
+    enum: [
+      "traffic_accident",
+      "fire",
+      "medical",
+      "flood",
+      "road_block",
+      "security",
+      "other",
+      null,
     ],
   };
 }

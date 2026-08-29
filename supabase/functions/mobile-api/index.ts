@@ -48,12 +48,90 @@ async function appReport(report: Record<string, unknown>) {
   const storedVoice = typeof report.voice_note_path === "string" ? report.voice_note_path : "";
   const citizenReport = { ...report };
   for (const internal of ["agent_analysis", "agent_model", "agent_response_id", "media_exif", "media_verification"]) delete citizenReport[internal];
+  const analysis = report.agent_analysis && typeof report.agent_analysis === "object"
+    ? report.agent_analysis as Record<string, Record<string, unknown>>
+    : null;
+  const citizenAi = analysis
+    ? {
+      triage: analysis.triage ?? null,
+      classification: analysis.classification ?? null,
+      severity: analysis.severity ?? null,
+      image: analysis.image ?? null,
+      final: analysis.final
+        ? {
+          recommended_action: analysis.final.recommended_action,
+          urgency: analysis.final.urgency,
+          reason: analysis.final.reason,
+        }
+        : null,
+    }
+    : null;
   return {
     ...citizenReport,
     report_id: report.public_code,
     media_paths: mediaPaths,
     media_exif: report.media_exif ?? [],
+    citizen_ai: citizenAi,
     voice_note_path: storedVoice ? await signedPath(storedVoice) : null,
+  };
+}
+
+function finiteNumber(value: unknown) {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function normalizedCaptureTime(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const exifDate = value.trim().replace(
+    /^(\d{4}):(\d{2}):(\d{2})\s/,
+    "$1-$2-$3T",
+  );
+  const parsed = new Date(exifDate);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const toRad = (value: number) => value * Math.PI / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(6_371_000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+}
+
+function sanitizeMediaMetadata(raw: unknown, reportLat: number | null, reportLng: number | null) {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const capturedAt = normalizedCaptureTime(value.captured_at);
+  const gpsLatitude = finiteNumber(value.gps_latitude);
+  const gpsLongitude = finiteNumber(value.gps_longitude);
+  const capturedAtMs = capturedAt ? new Date(capturedAt).getTime() : null;
+  const ageHours = capturedAtMs == null ? null : Math.round((Date.now() - capturedAtMs) / 3_600_000);
+  const distance = reportLat != null && reportLng != null && gpsLatitude != null && gpsLongitude != null
+    ? distanceMeters(reportLat, reportLng, gpsLatitude, gpsLongitude)
+    : null;
+  const text = (key: string, max = 120) =>
+    typeof value[key] === "string" && value[key].trim()
+      ? value[key].trim().slice(0, max)
+      : null;
+  return {
+    filename: text("filename"),
+    mime_type: text("mime_type", 60),
+    file_size: finiteNumber(value.file_size),
+    width: finiteNumber(value.width),
+    height: finiteNumber(value.height),
+    device_make: text("device_make", 80),
+    device_model: text("device_model", 100),
+    software: text("software", 100),
+    captured_at: capturedAt,
+    age_hours: ageHours,
+    gps_latitude: gpsLatitude,
+    gps_longitude: gpsLongitude,
+    distance_from_report_meters: distance,
+    location_match: distance == null ? "unknown" : distance <= 500 ? "match" : "mismatch",
+    captured_at_status: ageHours == null ? "unknown" : ageHours < -1 ? "future" : ageHours <= 72 ? "recent" : "old",
+    source: text("source", 40) ?? "expo_image_picker",
   };
 }
 
@@ -158,7 +236,7 @@ Deno.serve(async (request) => {
 
   if (request.method === "GET" && path === "/api/reports/public") {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await admin.from("reports").select("public_code, confirmed_incident_type, type, priority, status, department, geo_wilayat, geo_governorate, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(50);
+    const { data, error } = await admin.from("reports").select("public_code, confirmed_incident_type, type, priority, status, department, geo_wilayat, geo_governorate, created_at").gte("created_at", since).not("priority", "is", null).neq("priority", "none").order("created_at", { ascending: false }).limit(50);
     if (error) return respond({ message: "تعذر جلب التنبيهات" }, 500);
     return respond((data ?? []).map((r) => ({ report_id: r.public_code, type: r.confirmed_incident_type ?? r.type, priority: r.priority, status: r.status, department: r.department, wilayat: r.geo_wilayat, governorate: r.geo_governorate, created_at: r.created_at })));
   }
@@ -175,7 +253,7 @@ Deno.serve(async (request) => {
     const voice = form.get("voice_note");
     const description = String(form.get("description") ?? "").trim();
     const type = String(form.get("type") ?? "").trim();
-    if (!description && !type && media.length === 0) return respond({ message: "البلاغ فارغ — أضف وصفًا أو نوع الحادث أو صورة" }, 400);
+    if (!description && media.length === 0) return respond({ message: "البلاغ فارغ — أضف وصفًا أو صورة" }, 400);
     if (media.length > maxMediaFiles) return respond({ message: `الحد الأقصى ${maxMediaFiles} صور لكل بلاغ` }, 400);
 
     const uploaded: string[] = [];
@@ -191,16 +269,29 @@ Deno.serve(async (request) => {
     }
     const mediaPaths = uploaded.slice(0, media.length);
     const voiceNotePath = uploaded.length > media.length ? uploaded.at(-1) : null;
+    const latitude = form.get("latitude") ? Number(form.get("latitude")) : null;
+    const longitude = form.get("longitude") ? Number(form.get("longitude")) : null;
+    const rawMetadata = (() => {
+      try {
+        return JSON.parse(String(form.get("media_metadata") ?? "[]"));
+      } catch {
+        return [];
+      }
+    })();
+    const mediaExif = Array.isArray(rawMetadata)
+      ? rawMetadata.slice(0, media.length).map((entry) => sanitizeMediaMetadata(entry, latitude, longitude)).filter(Boolean)
+      : [];
     const report = {
       public_code: code,
       user_id: userId,
       channel: "app",
-      type: type || "other",
+      type: type || null,
       description,
       location_text: String(form.get("location_text") ?? ""),
-      latitude: form.get("latitude") ? Number(form.get("latitude")) : null,
-      longitude: form.get("longitude") ? Number(form.get("longitude")) : null,
+      latitude,
+      longitude,
       media_paths: mediaPaths,
+      media_exif: mediaExif,
       voice_note_path: voiceNotePath,
       status: "received",
       pipeline_status: "pending",

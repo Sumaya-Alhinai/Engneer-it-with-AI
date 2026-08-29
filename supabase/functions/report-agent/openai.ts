@@ -4,12 +4,13 @@ import { reportAgentInstructions } from "./prompt.ts";
 type ReportInput = {
   report_id: string;
   user_id: string;
-  selected_type: string;
+  selected_type: string | null;
   description: string;
   location_text: string;
   has_coordinates: boolean;
+  coordinates: { latitude: number; longitude: number } | null;
   image_urls: string[];
-  has_camera_exif: boolean;
+  image_metadata: unknown[];
 };
 
 export async function analyzeReport(input: ReportInput) {
@@ -24,8 +25,9 @@ export async function analyzeReport(input: ReportInput) {
       description: input.description,
       location_text: input.location_text,
       has_coordinates: input.has_coordinates,
+      coordinates: input.coordinates,
       has_image: input.image_urls.length > 0,
-      has_camera_exif: input.has_camera_exif,
+      image_metadata: input.image_metadata,
     }),
   }];
   for (const imageUrl of input.image_urls.slice(0, 3)) {

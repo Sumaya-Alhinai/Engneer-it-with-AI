@@ -6,17 +6,25 @@ export interface StaffSession {
 }
 
 export interface MediaExif {
-  path: string;
+  path?: string;
+  filename?: string;
   captured_at?: string;
   device?: string;
+  device_make?: string;
+  device_model?: string;
+  age_hours?: number;
+  captured_at_status?: string;
+  location_match?: string;
+  distance_from_report_meters?: number;
   gps_latitude?: number;
   gps_longitude?: number;
 }
 
 export interface AgentAnalysis {
-  intake: { selected_incident_type: string; confidence: number; summary: string; location_text: string };
-  classification: { confirmed_incident_type: string; type_match: boolean; confidence: number; reason: string };
-  severity: { priority: string; risk_score: number; reason: string };
+  intake: { selected_incident_type: string | null; confidence: number; summary: string; location_text: string };
+  classification: { confirmed_incident_type: string; type_match: boolean | null; confidence: number; reason: string };
+  severity: { priority: string; risk_score: number; reason: string; evidence: string[]; uncertainty: string };
+  triage: { is_incident_report: boolean; incident_relevance: string; confidence: number; reason: string };
   location: { status: string; accessibility: string; location_risk: string; note: string };
   verification: { verified: boolean; confidence: number; status: string; reason: string };
   image: {
@@ -29,6 +37,10 @@ export interface AgentAnalysis {
     matches_reported_type: boolean | null;
     ai_generated_suspected: boolean | null;
     ai_generated_reason: string;
+    metadata_status: string;
+    captured_at_status: string;
+    location_match: string;
+    metadata_note: string;
   };
   final: { recommended_action: string; department: string; urgency: string; reason: string; notify_citizen: boolean };
   notification: { citizen_message: string; agency_message: string };
