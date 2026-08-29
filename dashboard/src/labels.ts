@@ -17,6 +17,7 @@ export const statusLabels: Record<string, string> = {
 export const statusOrder = ['received', 'dispatched', 'en_route', 'resolved'];
 
 export const priorityLabels: Record<string, string> = {
+  critical: 'حرجة',
   high: 'عالية',
   medium: 'متوسطة',
   low: 'منخفضة',
@@ -28,11 +29,15 @@ export const typeLabels: Record<string, string> = {
   flood: 'أمطار وأودية',
   weather: 'أمطار وأودية',
   medical: 'حالة صحية طارئة',
+  road_block: 'إغلاق طريق',
+  security: 'بلاغ أمني',
   other: 'أخرى',
 };
 
 export function priorityColor(priority: string): string {
   switch (priority) {
+    case 'critical':
+      return '#B42318';
     case 'high':
       return '#E8433D';
     case 'medium':

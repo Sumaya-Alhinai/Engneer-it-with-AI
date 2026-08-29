@@ -117,7 +117,6 @@ Deno.serve(async (request) => {
       .from("reports")
       .select("*")
       .eq("pipeline_status", "failed")
-      .gte("pipeline_attempts", 5)
       .order("created_at", { ascending: false })
       .limit(100);
     if (queryError) return json({ message: "تعذر جلب البلاغات" }, 500);

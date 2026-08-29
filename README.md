@@ -1,7 +1,9 @@
 # Aman AI — دليل التشغيل والنشر بعد الربط الكامل
 
 هذي نسخة محدّثة من المشروع بعد ربط الأجزاء الأربعة ببعض:
-**التطبيق (Flutter)** ↔ **الباك-إند (FastAPI)** ↔ **الوكلاء (n8n، 8 وكلاء AI)** ↔ **قاعدة البيانات (PostgreSQL)**،
+**الإنتاج:** التطبيق (Flutter) ↔ Supabase Edge Functions (`mobile-api` + `report-agent`) ↔ OpenAI Responses API ↔ PostgreSQL/Storage.
+
+ملفات n8n الثمانية باقية كمرجع للعقود والتشغيل المحلي القديم، لكن مسار Supabase لا يحتاج n8n: `report-agent` ينفّذ مسؤولياتها كتقرير JSON منظم باستدعاء واحد، ويحفظ توصية دعم قرار دون إرسال فرقة أو إشعار تلقائي.
 بالإضافة لداشبورد React للموظفين.
 
 ## البنية
@@ -45,18 +47,21 @@ docker compose up --build
 
 ## النشر الفعلي — بالترتيب
 
-### 1. قاعدة البيانات → Supabase
-- تم تطبيق `aman-backend/app/schema.sql` على مشروع Supabase.
-- من Supabase: `Project Settings → Database → Connection string` انسخ رابط Postgres وضعه كمتغير `DATABASE_URL` في استضافة الباك-إند.
-- لا تضع كلمة المرور في GitHub أو داخل ملفات الواجهة.
+### 1. Supabase — قاعدة البيانات وStorage والوكيل
+
+- طبّق migrations الموجودة في `supabase/migrations/`.
+- انشر `mobile-api` و`staff-api` و`report-agent`.
+- ضع `OPENAI_API_KEY` في Supabase Edge Function Secrets فقط، ويمكن ضبط `OPENAI_REPORT_MODEL` (الافتراضي `gpt-5.4-mini`).
+- لا تضع مفتاح OpenAI أو service-role في GitHub أو Flutter أو الداشبورد.
 
 ### 2. الباك-إند → Render (أو Railway/Fly.io بنفس الفكرة)
 - ارفع مجلد `aman-backend` كمستودع Git منفصل (فيه Dockerfile و`render.yaml` جاهزان).
 - على Render: New → Blueprint → اختر المستودع، ثم أضف `DATABASE_URL` يدويًا من Supabase؛ ملف `render.yaml` لم يعد ينشئ قاعدة PostgreSQL ثانية.
 - اضبط أيضًا: `ALLOWED_ORIGINS`, `N8N_WEBHOOK_URL`, `N8N_CALLBACK_SECRET`, `PUBLIC_BASE_URL`.
 
-### 3. n8n → أي استضافة (n8n Cloud هو الأسهل، أو self-host)
-راجع `n8n-workflows/README_INTEGRATION.md` بالتفصيل — يشمل ربط `AMAN_BACKEND_URL` و `N8N_CALLBACK_SECRET` رجوع بالاتجاه المعاكس.
+### 3. n8n (اختياري للمسار القديم فقط)
+
+لا يحتاجه تطبيق Supabase الحالي. راجع `n8n-workflows/README_INTEGRATION.md` فقط عند تشغيل FastAPI القديم محليًا.
 
 ### 4. الداشبورد → Vercel/Netlify (ثابت 100%، بناء بأمر واحد)
 ```bash
@@ -182,7 +187,7 @@ DATABASE_URL=postgresql://aman:pass@localhost:5433/AmanAI pytest tests/ -v
 2. **Redis** — Render يوفّره بضغطة؛ بدونه يشتغل النظام لكن حد المعدّل أضعف
 3. **صفحة سياسة خصوصية HTML** — المتاجر تطلب رابط صفحة، لا JSON
 4. **بيانات فرق الاستجابة الحقيقية** — الموجود بيانات تجريبية لمسقط
-5. **مراجعة تكلفة OpenAI** — ٨ وكلاء × كل بلاغ
+5. **مراجعة تكلفة OpenAI** — `report-agent` يستخدم استدعاء Responses API منظمًا لكل بلاغ جديد
 
 ## قبل النشر — إلزامي
 

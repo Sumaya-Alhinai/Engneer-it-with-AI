@@ -58,8 +58,8 @@ class ReportResult {
   ReportResult({required this.reportId, required this.department, required this.priority});
 }
 
-/// نتيجة إرسال البلاغ إلى الباك-إند: multipart/form-data يحاكي حقول
-/// webhook `report-agent` في Aman_AI_Master_Workflow.json (n8n).
+/// يرسل البلاغ كنص ومرفقات إلى mobile-api؛ بعد الحفظ يشغّل Supabase
+/// Edge Function المسماة report-agent تحليل Aman AI في الخلفية.
 class ReportsService {
   ReportsService._();
 

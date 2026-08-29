@@ -5,8 +5,8 @@ const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 const auth = createClient(url, Deno.env.get("SUPABASE_ANON_KEY") ?? "", { auth: { persistSession: false } });
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-user-token, x-webhook-secret",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type, x-user-token",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 const mediaBucket = "report-media";
 const maxMediaFiles = 5;
@@ -46,8 +46,10 @@ async function appReport(report: Record<string, unknown>) {
   const storedMedia = Array.isArray(report.media_paths) ? report.media_paths.map(String) : [];
   const mediaPaths = (await Promise.all(storedMedia.map(signedPath))).filter(Boolean);
   const storedVoice = typeof report.voice_note_path === "string" ? report.voice_note_path : "";
+  const citizenReport = { ...report };
+  for (const internal of ["agent_analysis", "agent_model", "agent_response_id", "media_exif", "media_verification"]) delete citizenReport[internal];
   return {
-    ...report,
+    ...citizenReport,
     report_id: report.public_code,
     media_paths: mediaPaths,
     media_exif: report.media_exif ?? [],
@@ -72,46 +74,20 @@ async function uploadFile(code: string, folder: "images" | "voice", file: File, 
   return path;
 }
 
-function constantTimeEqual(left: string, right: string) {
-  const a = new TextEncoder().encode(left);
-  const b = new TextEncoder().encode(right);
-  let difference = a.length ^ b.length;
-  const length = Math.max(a.length, b.length);
-  for (let i = 0; i < length; i++) difference |= (a[i] ?? 0) ^ (b[i] ?? 0);
-  return difference === 0;
-}
-
 async function triggerPipeline(report: Record<string, unknown>) {
-  const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL") ?? "";
-  if (!webhookUrl) {
-    await admin.from("reports").update({ pipeline_status: "failed", pipeline_attempts: 0, pipeline_last_error: "N8N_WEBHOOK_URL غير مضبوط" }).eq("public_code", report.public_code);
-    return;
-  }
-  await admin.from("reports").update({ pipeline_status: "processing", pipeline_attempts: 1, pipeline_last_error: null }).eq("public_code", report.public_code);
-  const media = Array.isArray(report.media_paths) ? report.media_paths.map(String) : [];
-  const imageUrl = media.length ? await signedPath(media[0]) : "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   try {
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(`${url}/functions/v1/report-agent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        report_id: report.public_code,
-        user_id: report.user_id,
-        type: report.type,
-        description: report.description,
-        location_text: report.location_text,
-        latitude: report.latitude,
-        longitude: report.longitude,
-        image_url: imageUrl,
-        has_camera_exif: false,
-      }),
-      signal: AbortSignal.timeout(20_000),
+      headers: { "Authorization": `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ report_id: report.public_code }),
+      signal: AbortSignal.timeout(70_000),
     });
-    if (!response.ok) throw new Error(`n8n HTTP ${response.status}`);
-    // وصول نتيجة الوكلاء عبر PATCH هو الذي يضع completed. إبقاؤها processing هنا
-    // يمنع اعتبار مجرد قبول الـ webhook تصنيفًا ناجحًا.
+    // report-agent writes its own detailed/sanitized failure state before a
+    // non-2xx response, so do not overwrite its attempt count or error here.
+    if (!response.ok) return;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "تعذر الوصول إلى n8n";
+    const message = error instanceof Error ? error.message : "تعذر تشغيل وكيل Aman AI";
     await admin.from("reports").update({ pipeline_status: "failed", pipeline_attempts: 1, pipeline_last_error: message.slice(0, 500) }).eq("public_code", report.public_code);
   }
 }
@@ -185,23 +161,6 @@ Deno.serve(async (request) => {
     const { data, error } = await admin.from("reports").select("public_code, confirmed_incident_type, type, priority, status, department, geo_wilayat, geo_governorate, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(50);
     if (error) return respond({ message: "تعذر جلب التنبيهات" }, 500);
     return respond((data ?? []).map((r) => ({ report_id: r.public_code, type: r.confirmed_incident_type ?? r.type, priority: r.priority, status: r.status, department: r.department, wilayat: r.geo_wilayat, governorate: r.geo_governorate, created_at: r.created_at })));
-  }
-
-  const classification = path.match(/^\/api\/reports\/([^/]+)\/classification$/);
-  if (request.method === "PATCH" && classification) {
-    const secret = Deno.env.get("N8N_CALLBACK_SECRET") ?? "";
-    if (!secret) return respond({ message: "N8N_CALLBACK_SECRET غير مضبوط" }, 503);
-    if (!constantTimeEqual(request.headers.get("x-webhook-secret") ?? "", secret)) return respond({ message: "غير مصرّح" }, 401);
-    const body = await request.json().catch(() => ({}));
-    const allowed = ["confirmed_incident_type", "department", "priority", "risk_score", "verification_status", "location_status", "ai_reason", "image_is_plausible", "image_authenticity_reason", "image_ai_generated_suspected", "image_ai_generated_reason", "status"];
-    const update: Record<string, unknown> = {};
-    for (const key of allowed) if (body[key] !== undefined && body[key] !== null) update[key] = body[key];
-    if (typeof update.risk_score === "number") update.risk_score = Math.max(0, Math.min(100, Math.round(update.risk_score)));
-    if (!Object.keys(update).length) return respond({ message: "لا يوجد تحديث لتطبيقه" }, 400);
-    Object.assign(update, { pipeline_status: "completed", pipeline_last_error: null, pipeline_next_retry_at: null, updated_at: new Date().toISOString() });
-    const { data, error } = await admin.from("reports").update(update).eq("public_code", decodeURIComponent(classification[1])).select("*").maybeSingle();
-    if (error) return respond({ message: "تعذر حفظ نتيجة الوكلاء" }, 500);
-    return data ? respond(await appReport(data)) : respond({ message: "البلاغ غير موجود" }, 404);
   }
 
   const required = await requireUser(request);

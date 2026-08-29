@@ -13,6 +13,27 @@ export interface MediaExif {
   gps_longitude?: number;
 }
 
+export interface AgentAnalysis {
+  intake: { selected_incident_type: string; confidence: number; summary: string; location_text: string };
+  classification: { confirmed_incident_type: string; type_match: boolean; confidence: number; reason: string };
+  severity: { priority: string; risk_score: number; reason: string };
+  location: { status: string; accessibility: string; location_risk: string; note: string };
+  verification: { verified: boolean; confidence: number; status: string; reason: string };
+  image: {
+    analyzed: boolean;
+    detected_incident_type: string | null;
+    confidence: number | null;
+    severity_indicators: string;
+    is_photo_plausible: boolean | null;
+    authenticity_reason: string;
+    matches_reported_type: boolean | null;
+    ai_generated_suspected: boolean | null;
+    ai_generated_reason: string;
+  };
+  final: { recommended_action: string; department: string; urgency: string; reason: string; notify_citizen: boolean };
+  notification: { citizen_message: string; agency_message: string };
+}
+
 export interface Report {
   report_id: string;
   user_id: string;
@@ -38,6 +59,9 @@ export interface Report {
   pipeline_status?: string | null;
   pipeline_attempts?: number | null;
   pipeline_last_error?: string | null;
+  agent_analysis?: AgentAnalysis | null;
+  agent_model?: string | null;
+  agent_completed_at?: string | null;
   /** الموقع الإداري الحقيقي من الاستعلام الجغرافي (لا تخمين النموذج) */
   geo_wilayat?: string | null;
   geo_governorate?: string | null;

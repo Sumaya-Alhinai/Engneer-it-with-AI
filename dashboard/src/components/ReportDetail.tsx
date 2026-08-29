@@ -57,6 +57,12 @@ export default function ReportDetail({ report, onUpdateStatus, updating }: Props
         </div>
       )}
 
+      {report.pipeline_status === 'processing' && (
+        <div className="pipeline-banner">
+          وكيل Aman AI يحلل النص والمرفقات الآن. ستظهر التوصية هنا عند اكتمال المعالجة.
+        </div>
+      )}
+
       {(report.confirmation_count ?? 0) > 0 && report.credibility && (
         /* تعدد المصادر المستقلة أقوى دليل مصداقية متاح: بلاغ منفرد قد يكون
            كاذبًا، لكن عدة بلاغات من أجهزة مختلفة عن نفس الموقع خلال دقائق
@@ -100,6 +106,40 @@ export default function ReportDetail({ report, onUpdateStatus, updating }: Props
         <div className="report-detail__section">
           <h3>الوصف</h3>
           <p>{report.description}</p>
+        </div>
+      )}
+
+      {report.agent_analysis && (
+        <div className="report-detail__section">
+          <h3>تحليل وكيل Aman AI</h3>
+          <div className="pipeline-banner">
+            <strong>توصية دعم قرار — لا تعني إرسال فرقة أو إشعار جهة تلقائيًا</strong>
+            <div style={{ marginTop: 6 }}>
+              الإجراء المقترح: {report.agent_analysis.final.recommended_action} · الجهة: {departmentLabels[report.agent_analysis.final.department] ?? report.agent_analysis.final.department}
+            </div>
+          </div>
+          <div className="report-detail__exif">
+            <div className="report-detail__exif-row">
+              <span>الاستقبال والتلخيص</span>
+              <strong>{report.agent_analysis.intake.summary}</strong>
+            </div>
+            <div className="report-detail__exif-row">
+              <span>التحقق من التصنيف</span>
+              <strong>{report.agent_analysis.classification.reason}</strong>
+            </div>
+            <div className="report-detail__exif-row">
+              <span>سبب مستوى الخطورة</span>
+              <strong>{report.agent_analysis.severity.reason}</strong>
+            </div>
+            <div className="report-detail__exif-row">
+              <span>التحقق من البلاغ</span>
+              <strong>{report.agent_analysis.verification.reason}</strong>
+            </div>
+            <div className="report-detail__exif-row">
+              <span>التوصية النهائية</span>
+              <strong>{report.agent_analysis.final.reason}</strong>
+            </div>
+          </div>
         </div>
       )}
 
