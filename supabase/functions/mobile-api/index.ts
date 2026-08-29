@@ -5,9 +5,16 @@ const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 const auth = createClient(url, Deno.env.get("SUPABASE_ANON_KEY") ?? "", { auth: { persistSession: false } });
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-user-token",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type, x-user-token, x-webhook-secret",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
 };
+const mediaBucket = "report-media";
+const maxMediaFiles = 5;
+const maxImageBytes = 10 * 1024 * 1024;
+const maxAudioBytes = 15 * 1024 * 1024;
+const imageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const audioTypes = new Set(["audio/mpeg", "audio/mp4", "audio/aac", "audio/wav", "audio/webm", "audio/ogg"]);
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const random = (length = 16) => Array.from(crypto.getRandomValues(new Uint8Array(length)), (n) => n.toString(16).padStart(2, "0")).join("");
 const reportCode = () => `AMN-${random(5).toUpperCase()}`;
@@ -30,8 +37,83 @@ async function requireUser(request: Request) {
   return { session: data };
 }
 
-function appReport(report: Record<string, unknown>) {
-  return { ...report, report_id: report.public_code, media_paths: report.media_paths ?? [], media_exif: report.media_exif ?? [] };
+async function signedPath(path: string) {
+  const { data, error } = await admin.storage.from(mediaBucket).createSignedUrl(path, 60 * 60);
+  return error ? "" : data.signedUrl;
+}
+
+async function appReport(report: Record<string, unknown>) {
+  const storedMedia = Array.isArray(report.media_paths) ? report.media_paths.map(String) : [];
+  const mediaPaths = (await Promise.all(storedMedia.map(signedPath))).filter(Boolean);
+  const storedVoice = typeof report.voice_note_path === "string" ? report.voice_note_path : "";
+  return {
+    ...report,
+    report_id: report.public_code,
+    media_paths: mediaPaths,
+    media_exif: report.media_exif ?? [],
+    voice_note_path: storedVoice ? await signedPath(storedVoice) : null,
+  };
+}
+
+function safeFilename(name: string) {
+  const extension = name.toLowerCase().match(/\.[a-z0-9]{1,5}$/)?.[0] ?? "";
+  return `${random(12)}${extension}`;
+}
+
+async function uploadFile(code: string, folder: "images" | "voice", file: File, allowed: Set<string>, maxBytes: number) {
+  if (!allowed.has(file.type.toLowerCase())) throw new Error("UNSUPPORTED_MEDIA_TYPE");
+  if (file.size > maxBytes) throw new Error("MEDIA_TOO_LARGE");
+  const path = `${code}/${folder}/${safeFilename(file.name)}`;
+  const { error } = await admin.storage.from(mediaBucket).upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw new Error(`UPLOAD_FAILED:${error.message}`);
+  return path;
+}
+
+function constantTimeEqual(left: string, right: string) {
+  const a = new TextEncoder().encode(left);
+  const b = new TextEncoder().encode(right);
+  let difference = a.length ^ b.length;
+  const length = Math.max(a.length, b.length);
+  for (let i = 0; i < length; i++) difference |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  return difference === 0;
+}
+
+async function triggerPipeline(report: Record<string, unknown>) {
+  const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL") ?? "";
+  if (!webhookUrl) {
+    await admin.from("reports").update({ pipeline_status: "failed", pipeline_attempts: 0, pipeline_last_error: "N8N_WEBHOOK_URL غير مضبوط" }).eq("public_code", report.public_code);
+    return;
+  }
+  await admin.from("reports").update({ pipeline_status: "processing", pipeline_attempts: 1, pipeline_last_error: null }).eq("public_code", report.public_code);
+  const media = Array.isArray(report.media_paths) ? report.media_paths.map(String) : [];
+  const imageUrl = media.length ? await signedPath(media[0]) : "";
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report_id: report.public_code,
+        user_id: report.user_id,
+        type: report.type,
+        description: report.description,
+        location_text: report.location_text,
+        latitude: report.latitude,
+        longitude: report.longitude,
+        image_url: imageUrl,
+        has_camera_exif: false,
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok) throw new Error(`n8n HTTP ${response.status}`);
+    // وصول نتيجة الوكلاء عبر PATCH هو الذي يضع completed. إبقاؤها processing هنا
+    // يمنع اعتبار مجرد قبول الـ webhook تصنيفًا ناجحًا.
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "تعذر الوصول إلى n8n";
+    await admin.from("reports").update({ pipeline_status: "failed", pipeline_attempts: 1, pipeline_last_error: message.slice(0, 500) }).eq("public_code", report.public_code);
+  }
 }
 
 Deno.serve(async (request) => {
@@ -105,39 +187,84 @@ Deno.serve(async (request) => {
     return respond((data ?? []).map((r) => ({ report_id: r.public_code, type: r.confirmed_incident_type ?? r.type, priority: r.priority, status: r.status, department: r.department, wilayat: r.geo_wilayat, governorate: r.geo_governorate, created_at: r.created_at })));
   }
 
+  const classification = path.match(/^\/api\/reports\/([^/]+)\/classification$/);
+  if (request.method === "PATCH" && classification) {
+    const secret = Deno.env.get("N8N_CALLBACK_SECRET") ?? "";
+    if (!secret) return respond({ message: "N8N_CALLBACK_SECRET غير مضبوط" }, 503);
+    if (!constantTimeEqual(request.headers.get("x-webhook-secret") ?? "", secret)) return respond({ message: "غير مصرّح" }, 401);
+    const body = await request.json().catch(() => ({}));
+    const allowed = ["confirmed_incident_type", "department", "priority", "risk_score", "verification_status", "location_status", "ai_reason", "image_is_plausible", "image_authenticity_reason", "image_ai_generated_suspected", "image_ai_generated_reason", "status"];
+    const update: Record<string, unknown> = {};
+    for (const key of allowed) if (body[key] !== undefined && body[key] !== null) update[key] = body[key];
+    if (typeof update.risk_score === "number") update.risk_score = Math.max(0, Math.min(100, Math.round(update.risk_score)));
+    if (!Object.keys(update).length) return respond({ message: "لا يوجد تحديث لتطبيقه" }, 400);
+    Object.assign(update, { pipeline_status: "completed", pipeline_last_error: null, pipeline_next_retry_at: null, updated_at: new Date().toISOString() });
+    const { data, error } = await admin.from("reports").update(update).eq("public_code", decodeURIComponent(classification[1])).select("*").maybeSingle();
+    if (error) return respond({ message: "تعذر حفظ نتيجة الوكلاء" }, 500);
+    return data ? respond(await appReport(data)) : respond({ message: "البلاغ غير موجود" }, 404);
+  }
+
   const required = await requireUser(request);
   if (required.error) return required.error;
 
   if (request.method === "POST" && path === "/api/reports") {
-    const form = await request.formData();
+    const form = await request.formData().catch(() => null);
+    if (!form) return respond({ message: "صيغة البلاغ غير صالحة" }, 400);
     const code = reportCode();
     const userId = required.session.user_public_id;
-    const { error } = await admin.from("reports").insert({
+    const media = form.getAll("media").filter((value): value is File => value instanceof File && value.size > 0);
+    const voice = form.get("voice_note");
+    const description = String(form.get("description") ?? "").trim();
+    const type = String(form.get("type") ?? "").trim();
+    if (!description && !type && media.length === 0) return respond({ message: "البلاغ فارغ — أضف وصفًا أو نوع الحادث أو صورة" }, 400);
+    if (media.length > maxMediaFiles) return respond({ message: `الحد الأقصى ${maxMediaFiles} صور لكل بلاغ` }, 400);
+
+    const uploaded: string[] = [];
+    try {
+      for (const file of media) uploaded.push(await uploadFile(code, "images", file, imageTypes, maxImageBytes));
+      if (voice instanceof File && voice.size > 0) uploaded.push(await uploadFile(code, "voice", voice, audioTypes, maxAudioBytes));
+    } catch (error) {
+      if (uploaded.length) await admin.storage.from(mediaBucket).remove(uploaded);
+      const reason = error instanceof Error ? error.message : "";
+      if (reason === "UNSUPPORTED_MEDIA_TYPE") return respond({ message: "نوع الملف المرفوع غير مدعوم" }, 400);
+      if (reason === "MEDIA_TOO_LARGE") return respond({ message: "حجم الملف المرفوع أكبر من الحد المسموح" }, 413);
+      return respond({ message: "تعذر حفظ المرفق" }, 500);
+    }
+    const mediaPaths = uploaded.slice(0, media.length);
+    const voiceNotePath = uploaded.length > media.length ? uploaded.at(-1) : null;
+    const report = {
       public_code: code,
       user_id: userId,
       channel: "app",
-      type: String(form.get("type") ?? "other"),
-      description: String(form.get("description") ?? ""),
+      type: type || "other",
+      description,
       location_text: String(form.get("location_text") ?? ""),
       latitude: form.get("latitude") ? Number(form.get("latitude")) : null,
       longitude: form.get("longitude") ? Number(form.get("longitude")) : null,
+      media_paths: mediaPaths,
+      voice_note_path: voiceNotePath,
       status: "received",
       pipeline_status: "pending",
-    });
-    if (error) return respond({ message: "تعذر حفظ البلاغ" }, 500);
+    };
+    const { error } = await admin.from("reports").insert(report);
+    if (error) {
+      if (uploaded.length) await admin.storage.from(mediaBucket).remove(uploaded);
+      return respond({ message: "تعذر حفظ البلاغ" }, 500);
+    }
+    EdgeRuntime.waitUntil(triggerPipeline(report));
     return respond({ report_id: code, user_id: userId, department: "", priority: "" });
   }
 
   if (request.method === "GET" && path === "/api/reports") {
     const { data, error } = await admin.from("reports").select("*").eq("user_id", required.session.user_public_id).order("created_at", { ascending: false }).limit(100);
     if (error) return respond({ message: "تعذر جلب البلاغات" }, 500);
-    return respond((data ?? []).map(appReport));
+    return respond(await Promise.all((data ?? []).map(appReport)));
   }
 
   const oneReport = path.match(/^\/api\/reports\/([^/]+)$/);
   if (request.method === "GET" && oneReport) {
     const { data } = await admin.from("reports").select("*").eq("public_code", decodeURIComponent(oneReport[1])).eq("user_id", required.session.user_public_id).maybeSingle();
-    return data ? respond(appReport(data)) : respond({ message: "البلاغ غير موجود" }, 404);
+    return data ? respond(await appReport(data)) : respond({ message: "البلاغ غير موجود" }, 404);
   }
 
   return respond({ message: "المسار غير موجود" }, 404);

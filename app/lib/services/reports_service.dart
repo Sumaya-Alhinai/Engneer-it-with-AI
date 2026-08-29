@@ -27,6 +27,12 @@ String? _mimeFromExtension(String filename) {
       return 'image/jpeg';
     case 'png':
       return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+      return 'image/heic';
+    case 'heif':
+      return 'image/heif';
     case 'mp3':
       return 'audio/mpeg';
     case 'm4a':

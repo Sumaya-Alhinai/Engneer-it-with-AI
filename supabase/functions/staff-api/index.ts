@@ -11,6 +11,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "content-type, x-staff-token",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
 };
+const mediaBucket = "report-media";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -23,13 +24,22 @@ function sessionToken() {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function reportForDashboard(report: Record<string, unknown>) {
+async function signedPath(path: string) {
+  const { data, error } = await supabase.storage.from(mediaBucket).createSignedUrl(path, 60 * 60);
+  return error ? "" : data.signedUrl;
+}
+
+async function reportForDashboard(report: Record<string, unknown>) {
+  const storedMedia = Array.isArray(report.media_paths) ? report.media_paths.map(String) : [];
+  const mediaPaths = (await Promise.all(storedMedia.map(signedPath))).filter(Boolean);
+  const storedVoice = typeof report.voice_note_path === "string" ? report.voice_note_path : "";
   return {
     ...report,
     report_id: report.public_code,
-    media_paths: report.media_paths ?? [],
+    media_paths: mediaPaths,
     media_exif: report.media_exif ?? [],
     media_verification: report.media_verification ?? [],
+    voice_note_path: storedVoice ? await signedPath(storedVoice) : null,
   };
 }
 
@@ -99,7 +109,7 @@ Deno.serve(async (request) => {
     if (department) query = query.eq("department", department);
     const { data, error: queryError } = await query;
     if (queryError) return json({ message: "تعذر جلب البلاغات" }, 500);
-    return json((data ?? []).map(reportForDashboard));
+    return json(await Promise.all((data ?? []).map(reportForDashboard)));
   }
 
   if (request.method === "GET" && path === "/reports/needs-review") {
@@ -111,7 +121,7 @@ Deno.serve(async (request) => {
       .order("created_at", { ascending: false })
       .limit(100);
     if (queryError) return json({ message: "تعذر جلب البلاغات" }, 500);
-    return json((data ?? []).map(reportForDashboard));
+    return json(await Promise.all((data ?? []).map(reportForDashboard)));
   }
 
   const statusMatch = path.match(/^\/reports\/([^/]+)\/status$/);
@@ -127,7 +137,7 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (updateError) return json({ message: "تعذر تحديث البلاغ" }, 500);
     if (!data) return json({ message: "البلاغ غير موجود" }, 404);
-    return json(reportForDashboard(data));
+    return json(await reportForDashboard(data));
   }
 
   return json({ message: "المسار غير موجود" }, 404);

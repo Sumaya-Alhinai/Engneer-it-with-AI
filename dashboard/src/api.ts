@@ -61,5 +61,6 @@ export async function fetchReportsNeedingReview(token: string): Promise<Report[]
 }
 
 export function mediaUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
   return `${API_BASE}${path}`;
 }
