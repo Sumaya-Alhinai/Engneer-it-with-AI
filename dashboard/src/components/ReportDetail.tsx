@@ -8,7 +8,16 @@ interface Props {
   updating: boolean;
 }
 
-const isImage = (p: string) => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(p);
+const isImage = (p: string) => {
+  const pathname = (() => {
+    try {
+      return new URL(p).pathname;
+    } catch {
+      return p.split('?')[0];
+    }
+  })();
+  return /\.(jpg|jpeg|png|webp|heic|heif|gif)$/i.test(pathname);
+};
 
 /** المسافة بين نقطتين (كم) — لمقارنة موقع GPS المستخرج من الصورة بالموقع الذي أدخله المُبلِّغ. */
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
