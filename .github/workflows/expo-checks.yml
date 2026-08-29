@@ -1,0 +1,31 @@
+name: Expo checks
+
+on:
+  push:
+    paths:
+      - 'expo-app/**'
+      - '.github/workflows/expo-checks.yml'
+  pull_request:
+    paths:
+      - 'expo-app/**'
+      - '.github/workflows/expo-checks.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: expo-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: expo-app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx expo-doctor
+      - run: npm run export:web
+

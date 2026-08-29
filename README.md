@@ -10,6 +10,7 @@
 
 ```
 ├── app/                  تطبيق Flutter (Android + Web — بدون iOS، راجع IOS_PUBLISHING.md)
+├── expo-app/             نسخة React Native / Expo Go مستقلة (Android + iOS + Web)
 ├── aman-backend/         باك-إند FastAPI (المصدر الوحيد للحقيقة لقاعدة البيانات)
 ├── dashboard/             داشبورد React للموظفين (شرطة/إسعاف/دفاع مدني)
 ├── n8n-workflows/         وركفلو الوكلاء الثمانية + دليل الربط (README_INTEGRATION.md)
@@ -41,6 +42,7 @@ docker compose up --build
 - n8n: http://localhost:5678 (أول مرة: استورد ملفات `n8n-workflows/*.json`، فعّل الوركفلو، واربط بيانات اعتماد OpenAI — التفاصيل بـ `n8n-workflows/README_INTEGRATION.md`)
 - الداشبورد: `cd dashboard && npm install && npm run dev` (أنشئ `.env.local` من `.env.example`)
 - التطبيق: `cd app && flutter run --dart-define=API_BASE_URL=http://localhost:4000` (أو عدّل `ApiConfig.overrideBaseUrl`)
+- نسخة Expo Go: `cd expo-app && npm install && npx expo start --tunnel` ثم امسح QR من Expo Go. النسخة مرتبطة افتراضيًا بـ Supabase الإنتاجي.
 
 كود دخول موظف تجريبي (بعد أول تشغيل، من `schema.sql`): `ADMIN-0000` (مدير عام يشوف كل الجهات).
 **غيّره فورًا قبل أي نشر حقيقي** عبر `UPDATE staff SET access_code = '...' WHERE access_code = 'ADMIN-0000';`
