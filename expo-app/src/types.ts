@@ -44,6 +44,15 @@ export type MediaMetadata = {
   captured_at_status?: 'recent' | 'old' | 'future' | 'unknown';
 };
 
+export type MediaBlur = {
+  success: boolean;
+  processed: boolean;
+  people_visible: boolean | null;
+  faces: number;
+  method: 'targeted' | 'full_image_fallback' | 'not_needed';
+  reason: string;
+};
+
 export type CitizenAi = {
   triage?: { is_incident_report: boolean; incident_relevance: string; confidence: number; reason: string } | null;
   classification?: { confirmed_incident_type: string; confidence: number; reason: string } | null;
@@ -70,6 +79,7 @@ export type Report = {
   agent_completed_at?: string | null;
   media_paths?: string[];
   media_exif?: MediaMetadata[];
+  media_blur?: MediaBlur[];
   citizen_ai?: CitizenAi | null;
   created_at?: string;
 };

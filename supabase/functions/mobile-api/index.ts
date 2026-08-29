@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { protectImage } from "./image-privacy.ts";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
@@ -257,14 +258,22 @@ Deno.serve(async (request) => {
     if (media.length > maxMediaFiles) return respond({ message: `الحد الأقصى ${maxMediaFiles} صور لكل بلاغ` }, 400);
 
     const uploaded: string[] = [];
+    const mediaBlur: Array<Record<string, unknown>> = [];
     try {
-      for (const file of media) uploaded.push(await uploadFile(code, "images", file, imageTypes, maxImageBytes));
+      for (const file of media) {
+        if (!imageTypes.has(file.type.toLowerCase())) throw new Error("UNSUPPORTED_MEDIA_TYPE");
+        if (file.size > maxImageBytes) throw new Error("MEDIA_TOO_LARGE");
+        const protectedImage = await protectImage(file, userId);
+        uploaded.push(await uploadFile(code, "images", protectedImage.file, imageTypes, maxImageBytes));
+        mediaBlur.push({ ...protectedImage.audit, original_filename: file.name, stored_filename: protectedImage.file.name });
+      }
       if (voice instanceof File && voice.size > 0) uploaded.push(await uploadFile(code, "voice", voice, audioTypes, maxAudioBytes));
     } catch (error) {
       if (uploaded.length) await admin.storage.from(mediaBucket).remove(uploaded);
       const reason = error instanceof Error ? error.message : "";
       if (reason === "UNSUPPORTED_MEDIA_TYPE") return respond({ message: "نوع الملف المرفوع غير مدعوم" }, 400);
       if (reason === "MEDIA_TOO_LARGE") return respond({ message: "حجم الملف المرفوع أكبر من الحد المسموح" }, 413);
+      if (reason.startsWith("PRIVACY_IMAGE_")) return respond({ message: "تعذر حماية خصوصية الصورة؛ لم يتم حفظها" }, 422);
       return respond({ message: "تعذر حفظ المرفق" }, 500);
     }
     const mediaPaths = uploaded.slice(0, media.length);
@@ -292,6 +301,7 @@ Deno.serve(async (request) => {
       longitude,
       media_paths: mediaPaths,
       media_exif: mediaExif,
+      media_blur: mediaBlur,
       voice_note_path: voiceNotePath,
       status: "received",
       pipeline_status: "pending",
